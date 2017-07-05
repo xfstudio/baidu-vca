@@ -10,7 +10,7 @@
 7. [操作docker容器时常见错误的排查方式](#3.)
 8. [kubernetes集群的搭建、常用操作及调试方法](#7.)
 9. [linux中的局域网网络设置和子网划分](#4.)
-    
+
     以上知识点和本章的操作指令在后续的开发部署中都属于基础范畴，后续将不再对各项指令赘述和解释原理
 ---
 #### 基础设施网络架构
@@ -43,7 +43,7 @@ proxy | - | 104.131.144.180  |minion4  |
 - 自动化和智能化运维，使开发可以不过多分散精力到底层基础设施资源的编排，更关注于核心业务
 - 程序化的运维轻松愉快地管理上千台服务器都不在话下，成就感爆棚
 #### 具体安装步骤
-##### 1. 
+##### 1.
 在所有服务器安装服务器集群初始化管理工具SaltStack([其他平台参考官方文档](https://repo.saltstack.com/))
 - 修改CentOS的yum软件源(国内加速，自带的BCM速度不理想)
 ```
@@ -73,7 +73,7 @@ sudo yum install -y salt-master salt-minion
     interface: 0.0.0.0
     auto_accept: True
     file-roots：
-        base： 
+        base：
             - /srv/salt
         dev:
             - /srv/salt/dev/services
@@ -84,7 +84,7 @@ sudo yum install -y salt-master salt-minion
     pillar-roots:
         base:
             - /srv/pillar
- 
+
 ln -s /usr/local/bin/salt-master /usr/bin/
 sudo systemctl enable salt-master
 sudo systemctl start salt-master
@@ -95,7 +95,7 @@ sudo yum install -y salt-minion
 # vim /etc/salt/minion
     master: 172.16.0.2
     id: `hostname`
- 
+
 ln -s /usr/local/bin/salt-minion /usr/bin/
 sudo systemctl enable salt-minion
 sudo systemctl start salt-minion
@@ -116,7 +116,7 @@ salt '*' grains.item os
 salt '*' cmd.exec_code python 'import sys; print sys.version'
 ```
 确认全部命令执行完成，报错不可怕，能够根据错误检查出问题所在加以解决，可怕的是不报错却没达到预期输出。如存在minion丢失，使用“sudo systemctl status salt-minion -l”进行错误排查
-##### 2. 
+##### 2.
 安装并配置docker==以下命令皆在master机上执行即可==
 - 自动挂载数据盘（如有，推荐）
 ```
@@ -144,7 +144,7 @@ salt '*' cmd.run 'sed -i "s|ExecStart=/usr/bin/dockerd-current|ExecStart=/usr/bi
 # 启动docker并检查配置
 salt '*' cmd.run 'systemctl daemon-reload && systemctl restart docker && docker info'
 ```
-##### 3. 
+##### 3.
 创建本地私有Docker镜像仓库registry([参考：基于BOS创建registry](http://www.jianshu.com/p/df5e541822ee))和软件仓库。（推荐BOS方式，节省外网流量和磁盘空间，以及更高的安全性和更快的网络速度）项目是在docker开源基础上开发的BOS支持，也可作为go语言的学习资料，根据[源码](https://github.com/docker/distribution)结合自身需求定制编译。
 ```
 mkdir -p /usr/registry/auth && cd /usr/registry
@@ -200,7 +200,7 @@ docker push registry.bce.baidu.com/UserId/image_name:image_tag
 以后启动docker容器的流程都是如此：master本地pull或build好image->进行本地安全检查和兼容性测试->有改动的话commit->打好私有库tag->用上一步配置的账户login到私有仓库->push到registry->各个节点再login后从私有的docker镜像仓库中pull。
 
 ---
-##### 4. 
+##### 4.
 墙外的主机上执行,[推荐DigitalOcean的服务器](https://m.do.co/c/bf7fd732b368)管理方便，连接稳定，居家旅行科学上网必备良梯。
 ```
 # 使用可翻墙的主机下载kubeadm相关的rpm包，然后上传到BOS
@@ -256,7 +256,7 @@ chmod +x ~/down4china.sh
 
 ```
 上面一段操作在你翻墙的主机上完成，以下仍全在master上执行，也可以通过salt分配角色来远程操作,由于本文只用了一台翻墙服务器,暂时独立操作。下一章我们会专门介绍使用salt的grains分组和角色管理不同类型服务器。此外rpm包也可以通过clone k8s源码包进行编译的的形式生成，[go](https://github.com/golang/go)、[kubernetes](https://github.com/kubernetes/kubernetes)、[prometheus](https://github.com/prometheus/prometheus)、[docker](https://github.com/docker/docker-ce)、[etcd](https://github.com/coreos/etcd)、[flannel](https://github.com/coreos/flannel/)包括我们即将开发的搜索引擎，全部开发语言选型都是天生适用于高性能高并发需求的Go。
-##### 5. 
+##### 5.
 在所有minion上安装rpm软件包
 ```
 # 分发上传到服务器的rpm包到各minion
@@ -265,7 +265,7 @@ salt "*" cp.get_dir salt://rpm /tmp makedirs=True gzip=9
 salt "*" cmd.run 'yum install -y /tmp/rpm/*.rpm'
 
 ```
-##### 6. 
+##### 6.
 salt的pillar提供统一的集群配置模板管理，是实现自动化运维的关键所在，所使用的jinra模板引擎，类似于PHP的MVC，易于理解和使用。要注意sls配置文件的yaml强制约定以两个空格作为缩进，“:”和键值之间必须有至少一个空格。使用salt集群化安装和配置kubernetes、etcd、flannel（参考来源:[I:shdowsocks自用梯子的搭建和优化](http://note.youdao.com/noteshare?id=c2087b3ba10809abf605d8068d94b25d&sub=CF294ADF75E14B5EA0382D2E0E8D2286)、[II:kubeadm(安装过程需科学上网)](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)、[III:kubeadm国内安装](https://my.oschina.net/xdatk/blog/895645?nocache=1498467713064)、[IV:手动搭建kubernetes集群](https://github.com/opsnull/follow-me-install-kubernetes-cluster)、[一键部署Kubernetes高可用集群](http://www.cnblogs.com/keithtt/p/6649995.html)）
 - 创建集群环境配置文件模板
 ```
@@ -279,8 +279,8 @@ EOF
 # 全局环境变量
 tee /srv/pillar/env.sls <<-EOF
 appname: kubernetes
-kube_servers: 
-  master: 
+kube_servers:
+  master:
     - 172.16.0.2
     - 172.16.0.3
     - 172.16.0.5
@@ -288,10 +288,10 @@ kube_servers:
     - 172.16.0.2
     - 172.16.0.3
     - 172.16.0.5
-repo: 
+repo:
   host: 182.61.57.29
   port: 5000
-proxy: 
+proxy:
   host: 104.131.144.180
 etcd_prefix: http
 etcd_endpoint_port: '2379'
@@ -349,7 +349,7 @@ export KUBE_VERSION={{ kube_version }}
 EOF
 ```
 - kubeadm安装脚本初始化配置,注意其中对变量的处理,更新时对照安装命令所支持的参数进行调整
-``` 
+```
 mkdir -p /srv/salt/usr/local/kubelet/
 tee /srv/salt/usr/local/kubelet/kubeadm.sls <<-EOF
 kubernetes:
@@ -422,7 +422,7 @@ images=(
     k8s-dns-dnsmasq-nanny-amd64:{{ k8s_dns_version }}
     etcd-amd64:{{ etcd_version }}
     pause-amd64:{{ pause_version }}
-    
+
     # 以下镜像用于安装addons,网络组件flannel替换为weave
     # flannel:{{ flannel_version }}
     etcd-empty-dir-cleanup:3.0.14.0
@@ -468,8 +468,7 @@ alias cp='cp -i'
 EOF
 
 ```
-
-    这里有个来回折腾了我三天的大坑，注意不能修改实例名，改过的要改回和初始时短信中的一致，否则启动kubeadm init会一直卡住，kubelet报6443: getsockopt: connection refused，BCC坑货默认就是改了的。改好重启后reset 重新初始化~~还有一个原因是各个镜像因为DNS或者访问私有库的原因hang住了，在脚本中先pull需要的镜像来解决
+这里有个来回折腾了我三天的大坑，注意不能修改实例名，改过的要改回和初始时短信中的一致，否则启动kubeadm init会一直卡住，kubelet报6443: getsockopt: connection refused，BCC坑货默认就是改了的。改好重启后reset 重新初始化~~还有一个原因是各个镜像因为DNS或者访问私有库的原因hang住了，在脚本中先pull需要的镜像来解决
 ```
 # 渲染kubeadm环境配置文件,去除有问题的参数KUBELET_NETWORK_ARGS
 salt '*' saltutil.refresh_pillar
@@ -519,11 +518,15 @@ kube-system   weave-net-fvndp                               2/2       Running   
 kube-system   weave-net-p1skv                               2/2       Running   0          14h
 ```
 如果STATUS存在异常状态,使用"kubectl describe pod <pod-name>"追踪调试
-    ImagePullBackOff / ErrImagePull: 核对yaml中指定的镜像能否正常拉取,包括网络问题,标签tag是否对应,私有库是否已经登录并权限正确等原因.可尝试==在所分配的节点上==pull该镜像再用“kubectl apply -f <pod-filename>”拉取
-    CrashLoopBackOff: 使用"kubectl logs <pod-name> --previous",重点检查是否缺失环境变量或者挂载卷路径不存在之类的io问题
-    RunContainerError: ConfigMap 或者Secrets
-    ContainerCreating: 卡在这个状态的使用describe
-    
+
+ImagePullBackOff / ErrImagePull: 核对yaml中指定的镜像能否正常拉取,包括网络问题,标签tag是否对应,私有库是否已经登录并权限正确等原因.可尝试==在所分配的节点上==pull该镜像再用“kubectl apply -f <pod-filename>”拉取
+
+CrashLoopBackOff: 使用"kubectl logs <pod-name> --previous",重点检查是否缺失环境变量或者挂载卷路径不存在之类的io问题
+
+RunContainerError: ConfigMap 或者Secrets
+
+ContainerCreating: 卡在这个状态的使用describe
+
 - 排查启动问题无误后,分发[所需要安装addons的ConfigMap](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons),==将其中的docker源修改为我们的私有镜像库地址==然后创建容器,k8s会自动将任务部署到集群不同节点.关于不同应用的configmap语法,会在接下来的DevOps环境搭建中详述
 ```
 # cd <path>/<to>/<mainfest>
@@ -550,8 +553,11 @@ kube-system   kube-dns               10.254.0.10      <none>        53/UDP,53/TC
 kube-system   kubernetes-dashboard   10.254.164.157   <nodes>       80:30106/TCP                    1m
 kube-system   monitoring-influxdb    10.254.148.79    <nodes>       8086:32020/TCP,8083:30462/TCP   1m
 ```
+
 以上命令正确运行后，使用三台主机的任一节点IP:对外端口即可访问服务
+
 ---
+
 做了个kubectl与docker的对比表，方便大家加深理解
 
 attribute   |docker | kubernetes
@@ -570,7 +576,7 @@ attribute   |docker | kubernetes
 节点调度    |-   |auto
 安全控制    |system |rbac
 
-##### 7. 
+##### 7.
 为开始下一章EFK的学习，使用代理服务器预下载所需要镜像
 - 至此我们根据架构图构建了由3台服务互为主从的基础设施集群，三台mater组成的集群通过keeplived实现HA（参考来源:[Building High-Availability Clusters](https://kubernetes.io/docs/admin/high-availability/)、[基于Kubeadm的高可用Kubernetes集群](http://tonybai.com/2017/05/15/setup-a-ha-kubernetes-cluster-based-on-kubeadm-part1/)）
 ```
@@ -640,14 +646,14 @@ salt '*' cmd.run 'systemctl enable keepalived && systemctl restart keepalived'
 ```
 ![image](https://kubernetes.io/images/docs/ha.svg)
 这里的架构图直接应用kubernetes官方的HA建议性指南[Building High-Availability Clusters](https://kubernetes.io/docs/admin/high-availability/)三台服务器互为主从，一台挂掉后，负载均衡就调度剩余两台，目前的1.6版本还不支持k8s内部pod的HA，根据[里程碑计划将在v1.8中实现](https://github.com/kubernetes/kubeadm/issues/261)，预计两个月后，届时我们更新此文再做升级。对外发布配置外部DNS轮询或负载均衡能够进一步提升可用性，K8S有自带cluster-loadbalancing组件，即插即用
-##### 8. 
+##### 8.
 集群中新增物理主机时的发现与并网流程
 ```
 分配主机名，根据角色执行初始化
 初始化流程：
 根据VPC解析/etc/host,网络连通
 安装salt-minion，配置master连接，根据角色执行初始化脚本
-如果新增mater:更新集群配置->salt state.sls 分发环境配置-> kubeadmin init 
+如果新增mater:更新集群配置->salt state.sls 分发环境配置-> kubeadmin init
 如果新增minion:直接加入kubeadm join --token <token> <master-ip>:<master-port>
 简单两步即可搞定，使用salt可在master上完成所有操作。
 ```
@@ -658,19 +664,24 @@ salt '*' cmd.run 'systemctl enable keepalived && systemctl restart keepalived'
 &#160; &#160; &#160; &#160;至此整个私有集群的基础设施搭建完毕，稳定健壮且可无限水平扩展，运维管理更是轻松愉快，升级主机数量、硬件配置、软件版本、容器镜像时只需要在配置文件中更新即可，并且能够在秒级时间内完成，还支持系统动态更新，版本回滚。
 
 &#160; &#160; &#160; &#160;相对于开发环境，生产环境在功能实现的基础上，还需要关注安全策略、成本控制、CDN缓存、负载均衡、系统性能、集群伸缩、服务发现、状态监控、持久化、主从设置、读写分离、弹性扩容、日志存储、大数据、快照备份、异地灾备等需求，大部分灵活运用云服务器提供的功能可以多快好省地实现。但就像我们即将要做的实际项目一样，总有一些核心的东西必须我们自己动手才能搞定，都可以在这套基础设施上通过kubernetes的configmap或者salt的sls比较容易地做到，在接下来的工作中也会更多地涉及，需要进行调整时将继续使用本章的基础知识进行管理。
+
 ---
-&#160; &#160; &#160; &#160;题外话：看到这的同学可能已经发现的salt可以用来干什么了……没错，那就是可以由master随意控制成千上万台的僵尸网络，再配合kubernetes单服务器自动节点部署上千台虚拟机并秒级启动的支持，扑面而来的速8即视感。并且其客户端仅仅34KB~还[支持几乎所有操作系统](https://repo.saltstack.com/)（包括Debian、Red Hat / CentOS、Ubuntu、SUSE、Fedora、Windows、macOS、Amazon Linux、Raspbian等等，甚至经过环境适配[iOS](https://github.com/pybee/Python-Apple-support)和[Android](http://qpython.com/)）也能做到，这样受控设备就不仅限于服务器，个人电脑、电视、手机、汽车或是物联网设备，只要联网都在其控制范围内。这把刀既可以用来切菜，更可以用来打劫，作为一个IT工作者的职业操守来说，笔者有句话送给大家：创造一个世界，要比摧毁一个世界，永远要更困难，也更有价值和意义。
+&#160; &#160; &#160; &#160;题外话：看到这的同学可能已经发现的salt可以用来干什么了……没错，那就是可以由master随意控制成千上万台的僵尸网络，再配合kubernetes单服务器自动节点部署上千台虚拟机并秒级启动的支持，扑面而来的速8即视感。并且其客户端仅仅34KB~还[支持几乎所有操作系统](https://repo.saltstack.com/)（包括Debian、Red Hat / CentOS、Ubuntu、SUSE、Fedora、Windows、macOS、Amazon Linux、Raspbian等等，甚至经过环境适配[iOS](https://github.com/pybee/Python-Apple-support)和[Android](http://qpython.com/)）也能做到，这样受控设备就不仅限于服务器，个人电脑、电视、手机、汽车或是物联网设备，只要联网都在其控制范围内。这把刀既可以用来切菜，更可以用来打劫，作为一个IT工作者的职业操守来说，笔者有句话送给大家：
+
+创造一个世界，要比摧毁一个世界，永远要更困难，也更有价值和意义。
+
 服务器管理员也需要注意，这个世界上总会有不怀好意的人，人不犯我我不犯人，人若犯我我就提高安全意识，拒绝裸奔:)
 
 下一章我们将在这些基础设施之上，使用pod安装k8s的监控插件和其他DevOps组件，搭建开发支持系统，进一步熟悉容器的管理和操作，为正式开发应用准备高效率的开发和测试环境
+
 ---
 #### [章节目录](#本章知识点)
-- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
-- **一、SaltStack搭建Kubernetes集群管理架构基础设施**![image](http://progressed.io/bar/90?title=salt+kubernetes)
-- 二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系![image](http://progressed.io/bar/30?title=efk+devops)
-- 三、使用Python scrapy开发分布式爬虫进行数据采集![image](http://progressed.io/bar/65?title=python+crawler)
-- 四、VCA+go打造高性能语义化视频搜索引擎![image](http://progressed.io/bar/30?title=VCA+go+engine)
-- 五、Hadoop+Spark Streaming+GraphX实现大数据的流式计算和可视化![image](http://progressed.io/bar/20?title=hadoop+saprk)
-- 六、ReactXP开发跨全平台的客户端程序![image](http://progressed.io/bar/5?title=react+nodejs)
-- 七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
-- 终、以终为始，不是终点的终点![image](http://progressed.io/bar/15?title=future+end)
+- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了)![image](http://progressed.io/bar/95?title=begin+architecture)
+- **[一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)**![image](http://progressed.io/bar/90?title=salt+kubernetes)
+- [二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系](二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系)![image](http://progressed.io/bar/40?title=EFK+DevOps)
+- [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集)![image](http://progressed.io/bar/65?title=python+crawler)
+- [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎)![image](http://progressed.io/bar/30?title=VCA+go+engine)
+- [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化)![image](http://progressed.io/bar/20?title=hadoop+saprk)
+- [六、ReactXP开发跨全平台的客户端程序](六、ReactXP开发跨全平台的客户端程序)![image](http://progressed.io/bar/5?title=react+nodejs)
+- [七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优](七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优)![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
+- [终、以终为始，不是终点的终点](终、以终为始，不是终点的终点)![image](http://progressed.io/bar/15?title=future+end)

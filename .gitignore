@@ -1,0 +1,7 @@
+.idea
+/logs
+/data
+.env
+/.project
+.rpm
+/pillar/env.sls

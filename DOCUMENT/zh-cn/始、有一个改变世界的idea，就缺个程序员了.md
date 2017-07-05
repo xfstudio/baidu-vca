@@ -59,7 +59,7 @@
 #### 根据资源情况修正项目目标
 &#160; &#160; &#160; &#160;我们需要把想法落地，同时必须接受客观条件的限制。在这里请允许我再次原文引用一遍[阿里云CTO王坚博士](https://www.zhihu.com/question/30681093/answer/64634714)说过，让我印象最深刻的一句话：一个能用好云计算的公司，哪怕只有一个人，也可以拥有10000人公司的计算能力，曾经被跨国巨头垄断的计算能力。
 
-&#160; &#160; &#160; &#160;理论上是可以拥有这么大的算力，前提是你要有足够的money::joy::，要一上来就处理所有视频不太现实，但我们可以为这一天的到来提前做好布局规划。以下是原始需求关联的几大核心难点在demo阶段的相应对策：
+&#160; &#160; &#160; &#160;理论上是可以拥有这么大的算力，前提是你要有足够的money:joy:，要一上来就处理所有视频不太现实，但我们可以为这一天的到来提前做好布局规划。以下是原始需求关联的几大核心难点在demo阶段的相应对策：
 
 - 搜索范围：个人有个偏好，就是超爱各种CG，是暴雪电影制片人的脑残fans，所以本demo项目将处理能爬取到的CG
 - 视频时长：CG一般情况下不会超过10分钟，其中包含多个片段的组合方式信息存储在数据库中
@@ -74,7 +74,7 @@
 
 #### 围绕需求进行系统架构和技术选型
 复述下个人总结做系统架构的几大前提核心点
-- 首先是对业务的的深刻理解
+- 首先是对业务的深刻理解
 - 第二是对发展的正确认识
 - 第三是对环境的客观研判
 - 第四是对资源的有效调配
@@ -148,10 +148,13 @@
 
 #### 系统架构图
 经过以上环环相扣的分析，用架构图的直观方式来总结下我们的设计
+
 原始设计图
 ![image](../images/0-5-origin_desigin.jpg)
+
 美化下的分层架构图
 ![image](../images/0-5-system_archive.png)
+
 然后是数据流图
 ![image](../images/0-5-data_flow.png)
 系统架构到此就告一段落了，各个子系统架构图会在相应章节给出
@@ -173,14 +176,13 @@
 文中借鉴和引用了多个开源项目和文章，都会尽最大可能给出fork和reference的原始出处，如有遗漏请联系作者编辑。
 
 ---
-
 #### [章节目录](#本章知识点)
-- **始、我有一个改变世界的idea，就缺个程序员了**![image](http://progressed.io/bar/95?title=begin+architecture)
+- **[始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了)**![image](http://progressed.io/bar/95?title=begin+architecture)
 - [一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)![image](http://progressed.io/bar/90?title=salt+kubernetes)
-- 二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系![image](http://progressed.io/bar/30?title=EFK+DevOps)
-- 三、使用Python scrapy开发分布式爬虫进行数据采集![image](http://progressed.io/bar/65?title=python+crawler)
-- 四、VCA+go打造高性能语义化视频搜索引擎![image](http://progressed.io/bar/30?title=VCA+go+engine)
-- 五、Hadoop+Spark Streaming+GraphX实现大数据的流式计算和可视化![image](http://progressed.io/bar/20?title=hadoop+saprk)
-- 六、ReactXP开发跨全平台的客户端程序![image](http://progressed.io/bar/5?title=react+nodejs)
-- 七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
-- 终、以终为始，不是终点的终点![image](http://progressed.io/bar/15?title=future+end)
+- [二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系](二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系)**![image](http://progressed.io/bar/40?title=EFK+DevOps)
+- [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集)![image](http://progressed.io/bar/65?title=python+crawler)
+- [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎)![image](http://progressed.io/bar/30?title=VCA+go+engine)
+- [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化)![image](http://progressed.io/bar/20?title=hadoop+saprk)
+- [六、ReactXP开发跨全平台的客户端程序](六、ReactXP开发跨全平台的客户端程序)![image](http://progressed.io/bar/5?title=react+nodejs)
+- [七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优](七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优)![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
+- [终、以终为始，不是终点的终点](终、以终为始，不是终点的终点)![image](http://progressed.io/bar/15?title=future+end)
