@@ -3,7 +3,7 @@
 1. salt分组和OS自动化管理多种类型服务器
 2. [全局统一规范化编码及日志格式约定](编码规范)
 3. Kubernetes启动pod的yaml文件编写
-4. 集成通用日志采集和监控平台ELK用于开发调试
+4. 集成通用日志采集和监控平台EFK用于开发调试
 5. 将EFK与Kubernetes集成实现服务器运行状态监控
 6. Gitlab搭建本地代码库并触发自动集成CI
 7. Jenkins实现多种编程语言自动部署CD及其替代方案
@@ -12,7 +12,7 @@
 10. 实施敏捷开发必备的产品迭代工具：项目、bug、需求、优化、协作……集成管理平台
 ---
 #### 开发支持系统架构
-(../images/2-1-EFK.png)
+![通用日志采集和监控平台EFK架构图](../images/2-1-EFK.png)
 
 6-10的项目管理->代码库->规范/安全检查->CI/CD->需求迭代采用[阿里云code]()进行管理，对于中小型项目还是很实用的，这里就无须重复造轮子了。
 #### 升级代理服务器预下载安装插件所需要的镜像
@@ -182,12 +182,12 @@ done
 ```
 ---
 #### [章节目录](#本章知识点)
-- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了)![image](http://progressed.io/bar/95?title=begin+architecture)
+- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
 - [一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)![image](http://progressed.io/bar/90?title=salt+kubernetes)
 - **[二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系](二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系)**![image](http://progressed.io/bar/40?title=EFK+DevOps)
-- [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集)![image](http://progressed.io/bar/65?title=python+crawler)
-- [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎)![image](http://progressed.io/bar/30?title=VCA+go+engine)
-- [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化)![image](http://progressed.io/bar/20?title=hadoop+saprk)
-- [六、ReactXP开发跨全平台的客户端程序](六、ReactXP开发跨全平台的客户端程序)![image](http://progressed.io/bar/5?title=react+nodejs)
-- [七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优](七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优)![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
-- [终、以终为始，不是终点的终点](终、以终为始，不是终点的终点)![image](http://progressed.io/bar/15?title=future+end)
+- [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集.md)![image](http://progressed.io/bar/65?title=python+crawler)
+- [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎.md)![image](http://progressed.io/bar/30?title=VCA+go+engine)
+- [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化.md)![image](http://progressed.io/bar/20?title=hadoop+saprk)
+- [六、ReactXP开发跨全平台的客户端程序](六、ReactXP开发跨全平台的客户端程序.md)![image](http://progressed.io/bar/5?title=react+nodejs)
+- [七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优](七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优.md)![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
+- [终、以终为始，不是终点的终点](终、以终为始，不是终点的终点.md)![image](http://progressed.io/bar/15?title=future+end)

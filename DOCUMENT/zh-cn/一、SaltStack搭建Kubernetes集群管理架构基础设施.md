@@ -30,7 +30,7 @@
 instance-83trene1-1 | 172.16.0.3 | 182.61.50.173   |minion1 |master1 & minion1  |node
 instance-83trene1-2 | 172.16.0.5 | 182.61.22.36   |minion2  |master2 & minion2  |node
 instance-83trene1-3 | 172.16.0.2 | 182.61.57.29  |master & minion3  |master3 & minion3  |node
-proxy | - | 104.131.144.180  |minion4  |
+proxy | - | 104.131.144.180  |minion4  ||
 针对国内众所周知的网络原因，部署思路和流程需要调整为：
 1. 创建私有rpm repo和docker registry
 2. 使用salt管理所有服务器的配置和执行远程命令
@@ -266,7 +266,7 @@ salt "*" cmd.run 'yum install -y /tmp/rpm/*.rpm'
 
 ```
 ##### 6.
-salt的pillar提供统一的集群配置模板管理，是实现自动化运维的关键所在，所使用的jinra模板引擎，类似于PHP的MVC，易于理解和使用。要注意sls配置文件的yaml强制约定以两个空格作为缩进，“:”和键值之间必须有至少一个空格。使用salt集群化安装和配置kubernetes、etcd、flannel（参考来源:[I:shdowsocks自用梯子的搭建和优化](http://note.youdao.com/noteshare?id=c2087b3ba10809abf605d8068d94b25d&sub=CF294ADF75E14B5EA0382D2E0E8D2286)、[II:kubeadm(安装过程需科学上网)](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)、[III:kubeadm国内安装](https://my.oschina.net/xdatk/blog/895645?nocache=1498467713064)、[IV:手动搭建kubernetes集群](https://github.com/opsnull/follow-me-install-kubernetes-cluster)、[一键部署Kubernetes高可用集群](http://www.cnblogs.com/keithtt/p/6649995.html)）
+salt的pillar提供统一的集群配置模板管理，是实现自动化运维的关键所在，所使用的jinra模板引擎，类似于PHP的MVC，易于理解和使用。要注意sls配置文件的yaml强制约定以两个空格作为缩进，“:”和键值之间必须有至少一个空格。使用salt集群化安装和配置kubernetes、etcd、flannel（参考来源:[I:shdowsocks自用梯子的搭建和优化](http://note.youdao.com/noteshare?id=c2087b3ba10809abf605d8068d94b25d&sub=CF294ADF75E14B5EA0382D2E0E8D2286)、[II:kubeadm(安装过程需科学上网)](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)、[III:kubeadm国内安装](https://my.oschina.net/xdatk/blog/895645?nocache=1498467713064)、[IV:手动搭建kubernetes集群](https://github.com/opsnull/follow-me-install-kubernetes-cluster)、[一键部署Kubernetes高可用集群](http://www.cnblogs.com/keithtt/p/6649995.html)、[V:kubeadm v1.6.6的一些注意事项](http://blog.csdn.net/tiger435/article/details/73996078)）
 - 创建集群环境配置文件模板
 ```
 tee /srv/pillar/top.sls <<-EOF
@@ -577,8 +577,7 @@ attribute   |docker | kubernetes
 安全控制    |system |rbac
 
 ##### 7.
-为开始下一章EFK的学习，使用代理服务器预下载所需要镜像
-- 至此我们根据架构图构建了由3台服务互为主从的基础设施集群，三台mater组成的集群通过keeplived实现HA（参考来源:[Building High-Availability Clusters](https://kubernetes.io/docs/admin/high-availability/)、[基于Kubeadm的高可用Kubernetes集群](http://tonybai.com/2017/05/15/setup-a-ha-kubernetes-cluster-based-on-kubeadm-part1/)）
+至此我们根据架构图构建了由3台服务互为主从的基础设施集群，三台mater组成的集群通过keeplived实现HA（参考来源:[Building High-Availability Clusters](https://kubernetes.io/docs/admin/high-availability/)、[基于Kubeadm的高可用Kubernetes集群](http://tonybai.com/2017/05/15/setup-a-ha-kubernetes-cluster-based-on-kubeadm-part1/)）
 ```
 salt '*' cmd.run 'yum install -y keepalived'
 mkdir /srv/salt/etc/keepalived
@@ -676,12 +675,12 @@ salt '*' cmd.run 'systemctl enable keepalived && systemctl restart keepalived'
 
 ---
 #### [章节目录](#本章知识点)
-- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了)![image](http://progressed.io/bar/95?title=begin+architecture)
+- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
 - **[一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)**![image](http://progressed.io/bar/90?title=salt+kubernetes)
-- [二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系](二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系)![image](http://progressed.io/bar/40?title=EFK+DevOps)
-- [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集)![image](http://progressed.io/bar/65?title=python+crawler)
-- [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎)![image](http://progressed.io/bar/30?title=VCA+go+engine)
-- [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化)![image](http://progressed.io/bar/20?title=hadoop+saprk)
-- [六、ReactXP开发跨全平台的客户端程序](六、ReactXP开发跨全平台的客户端程序)![image](http://progressed.io/bar/5?title=react+nodejs)
-- [七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优](七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优)![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
-- [终、以终为始，不是终点的终点](终、以终为始，不是终点的终点)![image](http://progressed.io/bar/15?title=future+end)
+- [二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系](二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系.md)![image](http://progressed.io/bar/40?title=EFK+DevOps)
+- [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集.md)![image](http://progressed.io/bar/65?title=python+crawler)
+- [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎.md)![image](http://progressed.io/bar/30?title=VCA+go+engine)
+- [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化.md)![image](http://progressed.io/bar/20?title=hadoop+saprk)
+- [六、ReactXP开发跨全平台的客户端程序](六、ReactXP开发跨全平台的客户端程序.md)![image](http://progressed.io/bar/5?title=react+nodejs)
+- [七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优](七、将用户行为反馈接入机器学习框架TensorFlow进行算法调优.md)![image](http://progressed.io/bar/10?title=tensorflow+DL+AI)
+- [终、以终为始，不是终点的终点](终、以终为始，不是终点的终点.md)![image](http://progressed.io/bar/15?title=future+end)

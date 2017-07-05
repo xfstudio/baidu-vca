@@ -1,5 +1,4 @@
-# vim deploy-kubernetes.sh
-# usage:
+# vim deploy-k8s-v1.6.sh
 #!/bin/bash
 set -x
 set -e
@@ -12,10 +11,25 @@ KUBE_REPO_MIRRORS=http://hub-mirror.c.163.com
 KUBE_REPO_PREFIX=182.61.57.29:5000
 KUBE_REPO_USERNAME=Your_Registry_Username
 KUBE_REPO_PASSWORD=Your_Registry_Password
-
-KUER_CLUSTER_PARAMETER="--api-advertise-addresses=172.16.0.2 --external-etcd-endpoints=http://172.16.0.2:2379,http://172.16.0.3:2379,http://172.16.0.5:2379"
 KUBE_CLUSTER_CIDR=10.244.0.0/16
 KUBE_VERSION=v1.6.6
+KUBE_MASTER=172.16.0.2
+KUBE_ETCD_ENDPOINTS=http://172.16.0.2:2379,http://172.16.0.3:2379,http://172.16.0.5:2379
+KUBE_CONFIG=kubeadm-config.yaml
+tee $KUBE_CONFIG <<-EOF
+apiVersion: kubeadm.k8s.io/v1alpha1
+kind: MasterConfiguration
+api:
+  advertiseAddress: $KUBE_MASTER
+etcd:
+  endpoints:
+    - http://172.16.0.2:2379
+    - http://172.16.0.3:2379
+    - http://172.16.0.5:2379
+kubernetesVersion: $KUBE_VERSION
+EOF
+KUER_CLUSTER_PARAMETER="--config $KUBE_CONFIG"
+
 KUBE_IMAGES=(
     #docker.io:
     #  calico:
@@ -163,15 +177,15 @@ kube::get_env()
 {
   HA_STATE=$1
   [ $HA_STATE == "MASTER" ] && HA_PRIORITY=200 || HA_PRIORITY=`expr 200 - ${RANDOM} / 1000 + 1`
-  KUBE_VIP=$(echo $2 |awk -F= '{print $2}')
+  KUBE_VIP=$(echo $KUBE_MASTER |awk -F= '{print $KUBE_MASTER}')
   VIP_PREFIX=$(echo ${KUBE_VIP} | cut -d . -f 1,2,3)
   #dhcp和static地址的不同取法
-  VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'dynamic' '{print $2}' | head -1)
-  [ -z ${VIP_INTERFACE} ] && VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'global' '{print $2}' | head -1)
+  VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'dynamic' '{print $KUBE_MASTER}' | head -1)
+  [ -z ${VIP_INTERFACE} ] && VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'global' '{print $KUBE_MASTER}' | head -1)
   ###
-  LOCAL_IP=$(ip addr show | grep ${VIP_PREFIX} | awk -F / '{print $1}' | awk -F ' ' '{print $2}' | head -1)
-  MASTER_NODES=$(echo $3 | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
-  MASTER_NODES_NO_LOCAL_IP=$(echo "${MASTER_NODES}" | sed -e 's/'${LOCAL_IP}'//g')
+  LOCAL_IP=$(ip addr show | grep ${VIP_PREFIX} | awk -F / '{print $1}' | awk -F ' ' '{print $KUBE_MASTER}' | head -1)
+  MASTER_NODES=$(echo $KUBE_ETCD_ENDPOINTS | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
+  MASTER_NODES_NO_LOCAL_IP=$(echo "${MASTER_NODES}" | sed -e 's/"${LOCAL_IP}"//g')
 }
 
 kube::install_keepalived()
@@ -273,8 +287,8 @@ kube::master_up()
     # 存储master_ip，master02和master03需要用这个信息来copy配置
     kube::save_master_ip
 
-    # 这里一定要带上--pod-network-cidr参数，不然后面的flannel网络会出问题
-    kubeadm init --use-kubernetes-version=$KUBE_VERSION --pod-network-cidr=$KUBE_CLUSTER_CIDR $@
+    # 这里一定要带上--pod-network-cidr参数，不然后面的flannel网络会出问题 1.6以后--kubernetes-version=--use-kubernetes-version
+    kubeadm init --kubernetes-version=$KUBE_VERSION --apiserver-advertise-address=$KUBE_MASTER --pod-network-cidr=$KUBE_CLUSTER_CIDR $@
 
     # 使master节点可以被调度
     kubectl taint nodes --all dedicated-
