@@ -1,5 +1,7 @@
+#tee /srv/salt/top.sls <<-EOF
 base:
   '*':
-#    - usr.etc.kubernetes
-  'os:CentOS'
-    - usr.centos7.kubernetes.deploy-k8s
+#    - usr.local.kubernetes.manifests
+  'os:CentOS':
+    - usr.local.kubernetes.deploy-k8s
+#EOF

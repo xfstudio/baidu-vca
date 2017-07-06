@@ -29,6 +29,7 @@ images=(
     calico/node:v1.3.0
     calico/cni:v1.9.1
     calico/typha:v0.2.2
+    calico/kube-policy-controller:v0.6.0
     gcr.io/google_containers/defaultbackend:1.3
     gcr.io/google_containers/heapster-amd64:v1.4.0-beta.0
     gcr.io/google_containers/heapster-influxdb-amd64:v1.1.1

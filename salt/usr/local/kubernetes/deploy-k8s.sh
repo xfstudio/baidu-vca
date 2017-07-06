@@ -1,20 +1,22 @@
-# vim deploy-k8s-v1.6.sh
+# vim deploy-k8s.sh
 #!/bin/bash
 set -x
 set -e
 
 HTTP_SERVER=xf-repo.cdn.bcebos.com
 
-SSH_PORT=51222
+SSH_PORT={{ custom_ssh_port }}
 KUBE_HA=true
 KUBE_REPO_MIRRORS=http://hub-mirror.c.163.com
-KUBE_REPO_PREFIX=182.61.57.29:5000
+KUBE_REPO_PREFIX={{ repo_prefix }}
 KUBE_REPO_USERNAME=Your_Registry_Username
 KUBE_REPO_PASSWORD=Your_Registry_Password
-KUBE_CLUSTER_CIDR=10.244.0.0/16
-KUBE_VERSION=v1.6.6
-KUBE_MASTER=172.16.0.2
-KUBE_ETCD_ENDPOINTS=http://172.16.0.2:2379,http://172.16.0.3:2379,http://172.16.0.5:2379
+KUBE_CLUSTER_CIDR={{ cluster_cidr }}
+KUBE_CLUSTER_SERVICE_CIDR={{ cluster_service_cidr }}
+KUBE_VERSION={{ kube_version }}
+KUBE_MASTER={{ cluster_master }}
+KUBE_ETCD_VERSION={{ etcd_version }}
+KUBE_ETCD_ENDPOINTS={% for server in cluster_servers %}{% if loop.first %}{{ pillar['etcd']['prefix'] }}://{% endif %}{{ cluster_servers[server] }}:{{ pillar['etcd']['endpoint_port'] }}{% if not loop.last %},{{pillar['etcd']['prefix'] }}://{% endif %}{% endfor %}
 KUBE_CONFIG=kubeadm-config.yaml
 tee $KUBE_CONFIG <<-EOF
 apiVersion: kubeadm.k8s.io/v1alpha1
@@ -23,53 +25,16 @@ api:
   advertiseAddress: $KUBE_MASTER
 etcd:
   endpoints:
-    - http://172.16.0.2:2379
-    - http://172.16.0.3:2379
-    - http://172.16.0.5:2379
+{% for server in cluster_servers %}    - {{ cluster_servers[server] }}:{{ pillar['etcd']['endpoint_port'] }}{% if not loop.last %}
+{% endif %}{% endfor %}
 kubernetesVersion: $KUBE_VERSION
 EOF
 KUER_CLUSTER_PARAMETER="--config $KUBE_CONFIG"
 
 KUBE_IMAGES=(
-    #docker.io:
-    #  calico:
-        node:v1.3.0
-        cni:v1.9.1
-        typha:v0.2.2
-    #  weaveworks:
-        weave-kube:latest
-        weave-npc:latest
-    #gcr.io:
-    #  google_containers:
-        kube-proxy-amd64:v1.6.6
-        kube-controller-manager-amd64:v1.6.6
-        kube-apiserver-amd64:v1.6.6
-        kube-scheduler-amd64:v1.6.6
-        kube-discovery-amd64:1.0
-        k8s-dns-sidecar-amd64:1.14.2
-        k8s-dns-kube-dns-amd64:1.14.2
-        k8s-dns-dnsmasq-nanny-amd64:1.14.2
-        etcd-amd64:3.0.17
-        pause-amd64:3.0
-        kubernetes-dashboard-amd64:v1.6.1
-        elasticsearch:v2.4.1-2
-        kibana:v4.6.1-1
-        event-exporter:v0.1.0-r2
-        prometheus-to-sd:v0.1.2-r2
-        ip-masq-agent-amd64:v2.0.2
-        metadata-proxy:0.1.2
-        node-problem-detector:v0.4.1
-        defaultbackend:1.3
-        heapster-amd64:v1.4.0-beta.0
-        heapster-influxdb-amd64:v1.1.1
-        heapster-grafana-amd64:v4.0.2
-        addon-resizer:1.7
-        cluster-proportional-autoscaler-amd64:1.1.2-r2
-        etcd-empty-dir-cleanup:3.0.14.0
-    #quay.io:
-    #  coreos:
-        flannel:v0.8.0-rc1-amd64
-    )
+{% for sites in images %}{% for namespace in images[sites] %}{% for image in images[sites][namespace] %}    {{ image }}:{{ images[sites][namespace][image] }}{% if not loop.last %}
+{% endif %}{% endfor %}{% endfor %}{% endfor %}
+)
 
 root=$(id -u)
 if [ "$root" -ne 0 ] ;then
@@ -177,13 +142,13 @@ kube::get_env()
 {
   HA_STATE=$1
   [ $HA_STATE == "MASTER" ] && HA_PRIORITY=200 || HA_PRIORITY=`expr 200 - ${RANDOM} / 1000 + 1`
-  KUBE_VIP=$(echo $KUBE_MASTER |awk -F= '{print $KUBE_MASTER}')
+  KUBE_VIP=$(echo ${KUBE_MASTER} |awk -F= '{print $2}')
   VIP_PREFIX=$(echo ${KUBE_VIP} | cut -d . -f 1,2,3)
   #dhcp和static地址的不同取法
-  VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'dynamic' '{print $KUBE_MASTER}' | head -1)
-  [ -z ${VIP_INTERFACE} ] && VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'global' '{print $KUBE_MASTER}' | head -1)
+  VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'dynamic' '{print $2}' | head -1)
+  [ -z ${VIP_INTERFACE} ] && VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'global' '{print $2}' | head -1)
   ###
-  LOCAL_IP=$(ip addr show | grep ${VIP_PREFIX} | awk -F / '{print $1}' | awk -F ' ' '{print $KUBE_MASTER}' | head -1)
+  LOCAL_IP=$(ip addr show | grep ${VIP_PREFIX} | awk -F / '{print $1}' | awk -F ' ' '{print $2}' | head -1)
   MASTER_NODES=$(echo $KUBE_ETCD_ENDPOINTS | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}')
   MASTER_NODES_NO_LOCAL_IP=$(echo "${MASTER_NODES}" | sed -e 's/"${LOCAL_IP}"//g')
 }
@@ -196,11 +161,7 @@ kube::install_keepalived()
     i=$?
     set -e
     if [ $i -ne 0 ]; then
-        ip addr add ${KUBE_VIP}/32 dev ${VIP_INTERFACE}
-        curl -L http://$HTTP_SERVER/rpms/keepalived.tar.gz > /tmp/keepalived.tar.gz
-        tar zxf /tmp/keepalived.tar.gz -C /tmp
-        yum localinstall -y  /tmp/keepalived/*.rpm
-        rm -rf /tmp/keepalived*
+        yum install -y keepalived
         systemctl enable keepalived.service && systemctl start keepalived.service
         kube::config_keepalived
     fi
@@ -214,7 +175,7 @@ global_defs {
    router_id LVS_kubernetes
 }
 
-vrrp_script CheckkubernetesMaster {
+vrrp_script CheckKubernetesMaster {
     script "curl http://127.0.0.1:8080"
     interval 3
     timeout 9
@@ -241,7 +202,7 @@ vrrp_instance VI_1 {
         ${KUBE_VIP}
     }
     track_script {
-        CheckkubernetesMaster
+        CheckKubernetesMaster
     }
 }
 
@@ -262,7 +223,7 @@ kube::copy_master_config()
 {
     local master_ip=$(etcdctl get ha_master)
     mkdir -p /etc/kubernetes
-    scp -p $SSH_PORT -r root@${master_ip}:/etc/kubernetes/* /etc/kubernetes/
+    scp -P $SSH_PORT -r root@${master_ip}:/etc/kubernetes/* /etc/kubernetes/
     systemctl start kubelet
 }
 
@@ -288,9 +249,13 @@ kube::master_up()
     kube::save_master_ip
 
     # 这里一定要带上--pod-network-cidr参数，不然后面的flannel网络会出问题 1.6以后--kubernetes-version=--use-kubernetes-version
-    kubeadm init --kubernetes-version=$KUBE_VERSION --apiserver-advertise-address=$KUBE_MASTER --pod-network-cidr=$KUBE_CLUSTER_CIDR $@
+    kubeadm init --kubernetes-version=$KUBE_VERSION --apiserver-advertise-address=$KUBE_MASTER --pod-network-cidr=$KUBE_CLUSTER_SERVICE_CIDR $@
 
     # 使master节点可以被调度
+    mkdir -p ~/.kube
+    alias cp='cp'
+    cp /etc/kubernetes/admin.conf ~/.kube/config
+    alias cp='cp -i'
     kubectl taint nodes --all dedicated-
 
     echo -e "\033[32m 注意记录下token信息，node加入集群时需要使用！\033[0m"
@@ -353,6 +318,8 @@ kube::tear_down()
 
 main()
 {
+    export KUBE_REPO_PREFIX="$KUBE_REPO_PREFIX"
+    export KUBE_ETCD_IMAGE="$KUBE_REPO_PREFIX/etcd-amd64:$KUBE_ETCD_VERSION"
     case $1 in
     "m" | "master" )
         kube::master_up $@

@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: kubernetes-dashboard
+  labels:
+    k8s-app: kubernetes-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: default
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      containers:
+      - name: kubernetes-dashboard
+        image: {{ repo_prefix }}/kubernetes-dashboard-amd64:v1.6.1
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        args:
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 9090
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+      serviceAccountName: kubernetes-dashboard
+      # Comment the following tolerations if Dashboard must not be deployed on master
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: default
+spec:
+  ports:
+  - port: {{ dashboard_port }}
+    targetPort: 9090
+  selector:
+    k8s-app: kubernetes-dashboard
+## join when web domain binding
+# ---
+# apiVersion: extensions/v1beta1
+# kind: Ingress
+# metadata:
+#   name: dashboard-ingress
+#   namespace: default
+# spec:
+#   rules:
+#   - host: {{ dashboard_host }}
+#     http:
+#       paths:
+#       - path: /
+#         backend:
+#           serviceName: kubernetes-dashboard
+#           servicePort: {{ dashboard_port }}
