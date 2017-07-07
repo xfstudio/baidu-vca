@@ -5,16 +5,15 @@
 3. Kubernetes启动pod的yaml文件编写
 4. 集成通用日志采集和监控平台EFK用于开发调试
 5. 将EFK与Kubernetes集成实现服务器运行状态监控
-6. Gitlab搭建本地代码库并触发自动集成CI
-7. Jenkins实现多种编程语言自动部署CD及其替代方案
-8. Jenkins插件SonarQube执行代码规范和安全性检查
-9. 自动化测试框架解决方案
-10. 实施敏捷开发必备的产品迭代工具：项目、bug、需求、优化、协作……集成管理平台
+6. [Gitlab搭建本地代码库并触发自动集成CI](6-10)
+7. [Jenkins实现多种编程语言自动部署CD及其替代方案](6-10)
+8. [Jenkins插件SonarQube执行代码规范和安全性检查](6-10)
+9. [自动化测试框架解决方案](6-10)
+10. [实施敏捷开发必备的产品迭代工具：项目、bug、需求、优化、协作……集成管理平台](6-10)
 ---
 #### 开发支持系统架构
 ![通用日志采集和监控平台EFK架构图](../images/2-1-EFK.png)
 
-6-10的项目管理->代码库->规范/安全检查->CI/CD->需求迭代采用[阿里云code]()进行管理,对于中小型项目还是很实用的,这里就无须重复造轮子了。
 #### 升级代理服务器预下载安装插件所需要的镜像
 - 部署镜像环境,由于minion新增了一台代理服务器,为避免误操作,所以本章开始强制按角色分组执行命令
 ```
@@ -99,10 +98,11 @@ base:
     - proxy
 EOF
 
-# 代理变量
+# 全局环境变量和版本控制
 tee /srv/pillar/env.sls <<-EOF
 appname: kubernetes
 servers:
+  custom_ssh_port: 51222
   master:
     cn-gz-baidu-xf-bcc-1: 172.16.0.2
     cn-gz-baidu-xf-bcc-2: 172.16.0.3
@@ -117,17 +117,19 @@ proxy:
   port: 22
   username: YOUR_PROXY_USERNAME
   password: YOUR_PROXY_PASSWORD
-etcd_prefix: http
-etcd_endpoint_port: '2379'
-etcd_node_port: '2380'
+etcd:
+  prefix: http
+  endpoint_port: '2379'
+  node_port: '2380'
 zabbix_master: 182.61.57.29
-service_cidr: 10.254.0.0/16
-cluster_cidr: 172.30.0.0/16
-cluster_service_ip: 10.254.0.1
-cluster_server_ip: 182.61.57.29
-cluster_server_port: 6443
-cluster_dns: 10.254.0.2
-cluster_domain: cluster.local
+cluster:
+  master: 172.16.0.2
+  cidr: 172.30.0.0/16
+  service_cidr: 10.254.0.0/16
+  service_ip: 10.254.0.1
+  dns: 10.254.0.2
+  apiserver_port: 6443
+  domain: cluster.local
 
 packages:
   HTTP_SERVER: xf-repo.cdn.bcebos.com
@@ -150,10 +152,6 @@ packages:
         kubernetes-cni: 0.5.1
   images:
     docker.io:
-      calico:
-        node: v1.3.0
-        cni: v1.9.1
-        typha: v0.2.2
       weaveworks:
         weave-kube: latest
         weave-npc: latest
@@ -171,16 +169,17 @@ packages:
         pause-amd64: 3.0
         #
         kubernetes-dashboard-amd64: v1.6.1
-
+        nginx-ingress-controller: 0.9.0-beta.8
+        defaultbackend: 1.3
+        #
         elasticsearch: v2.4.1-2
-        kibana:v4.6.1-1
+        kibana: v4.6.1-1
         event-exporter: v0.1.0-r2
         prometheus-to-sd: v0.1.2-r2
         ip-masq-agent-amd64: v2.0.2
         metadata-proxy: 0.1.2
         node-problem-detector: v0.4.1
-
-        defaultbackend: 1.3
+        #
         heapster-amd64: v1.4.0-beta.0
         heapster-influxdb-amd64: v1.1.1
         heapster-grafana-amd64: v4.0.2
@@ -191,24 +190,46 @@ packages:
     quay.io:
       coreos:
         flannel: v0.8.0-rc1-amd64
+      calico:
+        node: v1.3.0
+        cni: v1.9.1
+        kube-policy-controller: v0.6.0
+        typha: v0.2.2
 EOF
 ```
 ```
-#!/usr/bin/env bash
-registry='182.61.57.29:5000'
-username=Your_Registry_Username
-password=Your_Registry_Password
-images={{ $pillar['packages']['images'] }}
+tee /srv/salt/usr/local/kubernetes/environment.sls <<-EOF
+kubernetes:
+  file.managed:
+    - template: jinja
+    - default:
+      appname: {{ pillar['appname'] }}
+      custom_ssh_port: {{ pillar['servers']['custom_ssh_port'] }}
+      repo-prefix: {{ pillar['registry']['host'] }}:{{ pillar['registry']['port'] }}
+      cluster: {{ pillar['cluster'] }}
+      cluster-servers: {{ pillar['servers']['master'] }}
+      images: {{ pillar['packages']['images'] }}
+EOF
+```
+```
+tee /srv/salt/usr/local/kubernetes/proxy_download.sh <<-EOF
+registry='{{ repo_prefix }}'
+images=(
+{% for sites in images %}{% for namespace in images[sites] %}{% for image in images[sites][namespace] %}    {{ sites }}/{{ namespace }}/{{ image }}:{{ images[sites][namespace][image] }}{% if not loop.last %}
+{% endif %}{% endfor %}{% endfor %}{% endfor %}
+)
 
-docker login -u $username -p $password $registry
+docker login -u {{ pillar['registry']['username'] }} -p {{ pillar['registry']['password'] }} $registry
 for image in ${images[@]} ; do
     imageName=${image##*/}
     docker pull $image
     docker tag $image $registry/$imageName
     docker push $registry/$imageName
 done
+EOF
 ```
-#tee /srv/salt/usr/local/kubernetes/deploy-k8s.sls <<-EOF
+```
+tee /srv/salt/usr/local/kubernetes/deploy-k8s.sls <<-EOF
 include:
   - usr.local.kubernetes.environment
 extend:
@@ -216,24 +237,46 @@ extend:
     file.managed:
       - source: salt://usr/local/kubernetes/deploy-k8s.sh
       - name: /usr/local/kubernetes/deploy-k8s.sh
-#EOF
+EOF
+```
+```
+tee /srv/salt/usr/local/kubernetes/manifests/init.sls <<-EOF
+/usr/local/kubernetes/manifests/kubernetes-dashboard.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kubernetes-dashboard.yaml
+    - template: jinja
+    - default:
+      dashboard_host: k8s.xf.sc.cn
+      dashboard_port: 80
+      kubernetes_dashboard_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['kubernetes-dashboard-amd64'] }}
+/usr/local/kubernetes/manifests/nginx-ingress-controller.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/nginx-ingress-controller.yaml
+    - template: jinja
+    - default:
+      defaultbackend_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['defaultbackend'] }}
+      nginx_ingress_controller_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['nginx-ingress-controller'] }}
+/usr/local/kubernetes/manifests/calico.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/calico.yaml
+    - template: jinja
+    - default:
+      cluster_etcd_endponits: {% for server in pillar['servers']['master'] %}{% if loop.first %}{{ pillar['etcd']['prefix'] }}://{% endif %}{{ pillar['servers']['master'][server] }}:{{ pillar['etcd']['endpoint_port'] }}{% if not loop.last %},{{pillar['etcd']['prefix'] }}://{% endif %}{% endfor %}
+      kube_policy_controller_version: {{ pillar['packages']['images']['quay.io']['calico']['kube-policy-controller'] }}
+      node_version: {{ pillar['packages']['images']['quay.io']['calico']['node'] }}
+      cni_version: {{ pillar['packages']['images']['quay.io']['calico']['cni'] }}
+/usr/local/kubernetes/manifests/kubernetes-heapster.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kubernetes-heapster.yaml
+    - template: jinja
+    - default:
+      heapster_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['heapster-amd64'] }}
+      heapster_influxdb_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['heapster-influxdb-amd64'] }}
+      heapster_grafana_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['heapster-grafana-amd64'] }}
+EOF
+```
 [include对比扩展和 required or watch](http://ju.outofmemory.cn/entry/99067)
 extend 语句的工作方式有别于 require 或者 watch ，它只是附加而不是替换必要的组件。
-#### 编码规范
-以Java最佳编程实践为范本,以利于自动化代码检查和测试
-- java
-- php
-- nodejs
-- go
-
-#### 日志格式
-以Linux系统日志为范本,便于接入ELK进行分析处理
-```
-通用格式: M d H:i:s hostname appname[processid]: information
-内容格式: I/W/E/F{number} path/to/source/file:linenumber: content: stacktrace[...]
-
-举例: Jun 27 18:47:28 instance-83trene1-3 kubelet[29319]: E0627 18:47:28.417917   29319 reflector.go:190] k8s.io/kubernetes/pkg/kubelet/kubelet.go:382: Failed to list *v1.Service: Get https://172.16.0.2:6443/api/v1/services?resourceVersion=0: dial tcp 172.16.0.2:6443: getsockopt: connection refused
-```
 
 #### kubernetes安装插件和应用
 
@@ -241,7 +284,7 @@ extend 语句的工作方式有别于 require 或者 watch ，它只是附加而
 salt '*' state.sls usr.local.kubernetes.deploy-k8s
 salt -E 'centos7-bcc[2,3].*' cmd.run 'bash /usr/local/kubernetes/deploy-k8s.sh replica'
 salt -E 'centos7-bcc[2,3].*' cmd.run 'kubeadm join --token 849fab.ec34e21817d1c573 172.16.0.2:6443'
-
+# 将插件的ConfigMap文件
 salt '*' state.sls usr.local.kubernetes.manifests
 kubectl apply -f /usr/local/kubernetes/manifests/
 # 检查etcd状态
@@ -250,10 +293,29 @@ etcdctl cluster-health
 kubectl get all --all-namespaces -o wide
 # 
 # 查看子网分配
-kubectl --namespace=kube-system get ep kubernetes-dashboard
+kubectl get ep kubernetes-dashboard --namespace=kube-system
 #
 kubectl describe services --all-namespaces
 ```
+#### 编码规范
+以Java最佳编程实践为范本,以利于自动化代码检查和测试
+- java
+- php
+- nodejs
+- go
+
+#### 日志格式
+以Linux系统日志为范本,便于接入EFK进行分析处理
+```
+通用格式: M d H:i:s hostname appname[processid]: information
+内容格式: I/W/E/F{number} path/to/source/file:linenumber: content: stacktrace[...]
+
+举例: Jun 27 18:47:28 instance-83trene1-3 kubelet[29319]: E0627 18:47:28.417917   29319 reflector.go:190] k8s.io/kubernetes/pkg/kubelet/kubelet.go:382: Failed to list *v1.Service: Get https://172.16.0.2:6443/api/v1/services?resourceVersion=0: dial tcp 172.16.0.2:6443: getsockopt: connection refused
+```
+切片约定:
+存档约定:
+#### 6-10
+项目管理->代码库->规范/安全检查->CI/CD->需求迭代采用[阿里云code]()进行管理,对于中小型项目还是很实用的,这里就无须重复造轮子了。
 ---
 #### [章节目录](#本章知识点)
 - [始、有一个改变世界的idea,就缺个程序员了](始、有一个改变世界的idea,就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)

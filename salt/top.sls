@@ -4,4 +4,5 @@ base:
 #    - usr.local.kubernetes.manifests
   'os:CentOS':
     - usr.local.kubernetes.deploy-k8s
+    - usr.local.kubernetes.manifests
 #EOF

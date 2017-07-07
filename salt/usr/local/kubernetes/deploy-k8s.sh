@@ -11,16 +11,18 @@ KUBE_REPO_MIRRORS=http://hub-mirror.c.163.com
 KUBE_REPO_PREFIX={{ repo_prefix }}
 KUBE_REPO_USERNAME=Your_Registry_Username
 KUBE_REPO_PASSWORD=Your_Registry_Password
-KUBE_CLUSTER_CIDR={{ cluster_cidr }}
-KUBE_CLUSTER_SERVICE_CIDR={{ cluster_service_cidr }}
-KUBE_VERSION={{ kube_version }}
-KUBE_MASTER={{ cluster_master }}
-KUBE_ETCD_VERSION={{ etcd_version }}
+KUBE_CLUSTER_CIDR={{ cluster['cidr'] }}
+KUBE_CLUSTER_SERVICE_CIDR={{ cluster['service_cidr'] }}
+KUBE_VERSION={{ images['gcr.io']['google_containers']['kube-apiserver-amd64'] }}
+KUBE_MASTER={{ cluster['master'] }}
+KUBE_ETCD_VERSION={{ images['gcr.io']['google_containers']['etcd-amd64'] }}
 KUBE_ETCD_ENDPOINTS={% for server in cluster_servers %}{% if loop.first %}{{ pillar['etcd']['prefix'] }}://{% endif %}{{ cluster_servers[server] }}:{{ pillar['etcd']['endpoint_port'] }}{% if not loop.last %},{{pillar['etcd']['prefix'] }}://{% endif %}{% endfor %}
 KUBE_CONFIG=kubeadm-config.yaml
 tee $KUBE_CONFIG <<-EOF
 apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
+networking:
+  podSubnet: {{ cluster['service_cidr'] }}
 api:
   advertiseAddress: $KUBE_MASTER
 etcd:
@@ -144,7 +146,6 @@ kube::get_env()
   [ $HA_STATE == "MASTER" ] && HA_PRIORITY=200 || HA_PRIORITY=`expr 200 - ${RANDOM} / 1000 + 1`
   KUBE_VIP=$(echo ${KUBE_MASTER} |awk -F= '{print $2}')
   VIP_PREFIX=$(echo ${KUBE_VIP} | cut -d . -f 1,2,3)
-  #dhcp和static地址的不同取法
   VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'dynamic' '{print $2}' | head -1)
   [ -z ${VIP_INTERFACE} ] && VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'global' '{print $2}' | head -1)
   ###
@@ -214,7 +215,6 @@ EOF
 kube::save_master_ip()
 {
     set +e
-    # 应该从$2里拿到etcd集群的 --endpoints, 这里默认走的127.0.0.1:2379
     [ ${KUBE_HA} == true ] && etcdctl mk ha_master ${LOCAL_IP}
     set -e
 }
@@ -244,21 +244,17 @@ kube::master_up()
     kube::install_bin
 
     [ ${KUBE_HA} == true ] && kube::install_keepalived "MASTER" $@
-
-    # 存储master_ip，master02和master03需要用这个信息来copy配置
     kube::save_master_ip
 
-    # 这里一定要带上--pod-network-cidr参数，不然后面的flannel网络会出问题 1.6以后--kubernetes-version=--use-kubernetes-version
     kubeadm init --kubernetes-version=$KUBE_VERSION --apiserver-advertise-address=$KUBE_MASTER --pod-network-cidr=$KUBE_CLUSTER_SERVICE_CIDR $@
 
-    # 使master节点可以被调度
     mkdir -p ~/.kube
     alias cp='cp'
     cp /etc/kubernetes/admin.conf ~/.kube/config
     alias cp='cp -i'
     kubectl taint nodes --all dedicated-
 
-    echo -e "\033[32m 注意记录下token信息，node加入集群时需要使用！\033[0m"
+    echo -e "\033[32m record thetoken, OR use 'kubectl token list' \033[0m"
 
     # install flannel network
     kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel-rbac.yml --namespace=kube-system

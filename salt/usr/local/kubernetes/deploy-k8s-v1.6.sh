@@ -11,10 +11,10 @@ KUBE_REPO_MIRRORS=http://hub-mirror.c.163.com
 KUBE_REPO_PREFIX=182.61.57.29:5000
 KUBE_REPO_USERNAME=Your_Registry_Username
 KUBE_REPO_PASSWORD=Your_Registry_Password
-KUBE_CLUSTER_CIDR=10.244.0.0/16
-KUBE_VERSION=v1.6.6
+KUBE_cluster['cidr']=10.244.0.0/16
+KUBE-version=v1.6.6
 KUBE_MASTER=172.16.0.2
-KUBE_ETCD_VERSION=3.0
+KUBE_ETCD-version=3.0
 KUBE_ETCD_ENDPOINTS=http://172.16.0.2:2379,http://172.16.0.3:2379,http://172.16.0.5:2379
 KUBE_CONFIG=kubeadm-config.yaml
 tee $KUBE_CONFIG <<-EOF
@@ -27,7 +27,7 @@ etcd:
     - http://172.16.0.2:2379
     - http://172.16.0.3:2379
     - http://172.16.0.5:2379
-kubernetesVersion: $KUBE_VERSION
+kubernetesVersion: $KUBE-version
 EOF
 KUER_CLUSTER_PARAMETER="--config $KUBE_CONFIG"
 
@@ -289,7 +289,7 @@ kube::master_up()
     kube::save_master_ip
 
     # 这里一定要带上--pod-network-cidr参数，不然后面的flannel网络会出问题 1.6以后--kubernetes-version=--use-kubernetes-version
-    kubeadm init --kubernetes-version=$KUBE_VERSION --apiserver-advertise-address=$KUBE_MASTER --pod-network-cidr=$KUBE_CLUSTER_CIDR $@
+    kubeadm init --kubernetes-version=$KUBE-version --apiserver-advertise-address=$KUBE_MASTER --pod-network-cidr=$KUBE_cluster['cidr'] $@
 
     # 使master节点可以被调度
     mkdir -p ~/.kube
@@ -359,7 +359,7 @@ kube::tear_down()
 main()
 {
     export KUBE_REPO_PREFIX="$KUBE_REPO_PREFIX"
-    export KUBE_ETCD_IMAGE="$KUBE_REPO_PREFIX/etcd-amd64:$KUBE_ETCD_VERSION"
+    export KUBE_ETCD_IMAGE="$KUBE_REPO_PREFIX/etcd-amd64:$KUBE_ETCD-version"
     case $1 in
     "m" | "master" )
         kube::master_up $@

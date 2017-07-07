@@ -15,7 +15,7 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
       - name: default-http-backend
-        image: {{ repo_prefix }}/defaultbackend:{{ defaultbackend_version }}
+        image: {{ repo_prefix }}/defaultbackend:{{ images['gcr.io']['google_containers']['defaultbackend'] }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -66,7 +66,7 @@ spec:
       terminationGracePeriodSeconds: 60
       serviceAccountName: nginx-ingress-controller
       containers:
-      - image: {{ repo_prefix }}/nginx-ingress-controller:{{ nginx_ingress_controller_version }}
+      - image: {{ repo_prefix }}/nginx-ingress-controller:{{ images['gcr.io']['google_containers']['nginx-ingress-controller'] }}
         name: nginx-ingress-controller
         readinessProbe:
           httpGet:
