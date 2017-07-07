@@ -1,9 +1,8 @@
 #tee /srv/salt/usr/local/kubernetes/manifests/kube-efk/init.sls <<-EOF
-kube-efk:
-  '*':
-    - usr.local.kubernetes.manifests.kube-efk.es-controller
-    - usr.local.kubernetes.manifests.kube-efk.fluentd-es-ds
-    - usr.local.kubernetes.manifests.kube-efk.kibana-controller
+include:
+  - usr.local.kubernetes.manifests.kube-efk.es-controller
+  - usr.local.kubernetes.manifests.kube-efk.fluentd-es-ds
+  - usr.local.kubernetes.manifests.kube-efk.kibana-controller
 /usr/local/kubernetes/manifests/kube-efk/es-clusterrole.yaml:
   file.managed:
     - source: salt://usr/local/kubernetes/manifests/kube-efk/es-clusterrole.yaml
