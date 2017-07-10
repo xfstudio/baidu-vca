@@ -16,6 +16,8 @@
 #### 基础设施网络架构
 ![有图纸了开始施工吧](../images/1-1-base_server.png)
 #### 准备工作
+![百度云免费三台服务器](../images/1-2-baidu_bcc_free.png)
+
 [百度云促销活动](https://cloud.baidu.com/event/CloudTimesBCCGZ/index.html?from=index-banner)-企业用户免费领三台2核4G云服务器BCC使用一个月,本计划全部完成后再发出来,可以用这些免费资源供大家上手练习,突然发现==7月7日活动结束==,只好先发这篇完成度较高的基础设施环境搭建来挖个坑。活动领取的服务器在“==华南-广州==”区域,控制台左上角手动切换
 1. 安装CentOS 7.2系统镜像,本文以CentOS7为例,其他Linux类似
 2. 在控制台初始化重置三台服务器的root密码(不要改hostname)
@@ -697,7 +699,7 @@ salt '*' cmd.run 'systemctl enable keepalived && systemctl restart keepalived'
 #### [章节目录](#本章知识点)
 - [始、有一个改变世界的idea,就缺个程序员了](始、有一个改变世界的idea,就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
 - **[一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)**![image](http://progressed.io/bar/90?title=salt+kubernetes)
-- [二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系](二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系.md)![image](http://progressed.io/bar/40?title=EFK+DevOps)
+- [二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系](二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系.md)![image](http://progressed.io/bar/40?title=EFK+DevOps)
 - [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集.md)![image](http://progressed.io/bar/65?title=python+crawler)
 - [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎.md)![image](http://progressed.io/bar/30?title=VCA+go+engine)
 - [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化.md)![image](http://progressed.io/bar/20?title=hadoop+saprk)

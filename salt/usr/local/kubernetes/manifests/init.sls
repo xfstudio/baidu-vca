@@ -4,5 +4,5 @@ include:
   - usr.local.kubernetes.manifests.kubernetes-heapster
   - usr.local.kubernetes.manifests.nginx-ingress-controller
   - usr.local.kubernetes.manifests.calico
-  - usr.local.kubernetes.manifests.kube-efk
+  - usr.local.kubernetes.manifests.efk
 #EOF

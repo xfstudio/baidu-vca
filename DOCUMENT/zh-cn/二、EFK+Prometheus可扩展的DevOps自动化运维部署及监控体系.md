@@ -1,26 +1,23 @@
-## 从零开始构建语义化视频搜索引擎(二)、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系
+## 从零开始构建语义化视频搜索引擎(二)、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系
 #### 本章知识点
-1. salt分组和OS自动化管理多种类型服务器
+1. salt分组和OS自动化管理多种类型服务器(salt分组管理)
 2. [全局统一规范化编码及日志格式约定](编码规范)
 3. Kubernetes启动pod的yaml文件编写
 4. 集成通用日志采集和监控平台EFK用于开发调试
 5. 将EFK与Kubernetes集成实现服务器运行状态监控
 6. [Gitlab搭建本地代码库并触发自动集成CI](6-10)
-7. [Jenkins实现多种编程语言自动部署CD及其替代方案](6-10)
-8. [Jenkins插件SonarQube执行代码规范和安全性检查](6-10)
+7. [Prometheus实现多种编程语言自动部署CD及其替代方案](6-10)
+8. [Prometheus插件SonarQube执行代码规范和安全性检查](6-10)
 9. [自动化测试框架解决方案](6-10)
 10. [实施敏捷开发必备的产品迭代工具：项目、bug、需求、优化、协作……集成管理平台](6-10)
 ---
-#### 开发支持系统架构
+#### 开发支持体系之日志采集和监控EFK平台架构图
 ![通用日志采集和监控平台EFK架构图](../images/2-1-EFK.png)
 
-#### 升级代理服务器预下载安装插件所需要的镜像
-- 部署镜像环境,由于minion新增了一台代理服务器,为避免误操作,所以本章开始强制按角色分组执行命令
-```
-alias salt='salt -N'
-```
-[操作目标参数](http://www.cnblogs.com/MacoLee/p/5750310.html):
+#### salt分组管理
+- 部署镜像环境,由于minion新增了一台代理服务器,为避免误操作,所以本章开始按角色分组执行命令
 
+[操作目标参数](http://www.cnblogs.com/MacoLee/p/5750310.html):
 -E，--pcre，通过正则表达式进行匹配:
 ```
 salt -E '^SN2013.*' test.ping #探测SN2013开头的主机id名是否连通
@@ -50,9 +47,11 @@ nginx:
 -N,--nodegroup,根据主控端master配置文件中的分组名称进行过滤。
 ```
 #分组配置：【/etc/salt/master】
+```
 nodegroups:
-web1group: 'L@wx,SN2013-08-21'
-web2group: 'L@SN2013-08-22,SN2014'
+  web1group: 'L@wx,SN2013-08-21'
+  web2group: 'L@SN2013-08-22,SN2014'
+```
 #其中L@表示后面的主机id格式为列表，即主机id以逗号分隔：G@表示以grain格式描述：S@表示以IP子网或地址格式描述
 salt -N web2group test.ping #探测web2group被控主机的连通性
 ```
@@ -211,6 +210,7 @@ kubernetes:
       images: {{ pillar['packages']['images'] }}
 EOF
 ```
+代理服务器上下载镜像的脚本模板
 ```
 tee /srv/salt/usr/local/kubernetes/proxy_download.sh <<-EOF
 registry='{{ repo_prefix }}'
@@ -228,6 +228,7 @@ for image in ${images[@]} ; do
 done
 EOF
 ```
+
 ```
 tee /srv/salt/usr/local/kubernetes/deploy-k8s.sls <<-EOF
 include:
@@ -238,65 +239,195 @@ extend:
       - source: salt://usr/local/kubernetes/deploy-k8s.sh
       - name: /usr/local/kubernetes/deploy-k8s.sh
 EOF
+# 以下所有配置管理要用到全局变量时皆做类似应用和扩展
 ```
-```
-tee /srv/salt/usr/local/kubernetes/manifests/init.sls <<-EOF
-/usr/local/kubernetes/manifests/kubernetes-dashboard.yaml:
-  file.managed:
-    - source: salt://usr/local/kubernetes/manifests/kubernetes-dashboard.yaml
-    - template: jinja
-    - default:
-      dashboard_host: k8s.xf.sc.cn
-      dashboard_port: 80
-      kubernetes_dashboard_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['kubernetes-dashboard-amd64'] }}
-/usr/local/kubernetes/manifests/nginx-ingress-controller.yaml:
-  file.managed:
-    - source: salt://usr/local/kubernetes/manifests/nginx-ingress-controller.yaml
-    - template: jinja
-    - default:
-      defaultbackend_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['defaultbackend'] }}
-      nginx_ingress_controller_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['nginx-ingress-controller'] }}
-/usr/local/kubernetes/manifests/calico.yaml:
-  file.managed:
-    - source: salt://usr/local/kubernetes/manifests/calico.yaml
-    - template: jinja
-    - default:
-      cluster_etcd_endponits: {% for server in pillar['servers']['master'] %}{% if loop.first %}{{ pillar['etcd']['prefix'] }}://{% endif %}{{ pillar['servers']['master'][server] }}:{{ pillar['etcd']['endpoint_port'] }}{% if not loop.last %},{{pillar['etcd']['prefix'] }}://{% endif %}{% endfor %}
-      kube_policy_controller_version: {{ pillar['packages']['images']['quay.io']['calico']['kube-policy-controller'] }}
-      node_version: {{ pillar['packages']['images']['quay.io']['calico']['node'] }}
-      cni_version: {{ pillar['packages']['images']['quay.io']['calico']['cni'] }}
-/usr/local/kubernetes/manifests/kubernetes-heapster.yaml:
-  file.managed:
-    - source: salt://usr/local/kubernetes/manifests/kubernetes-heapster.yaml
-    - template: jinja
-    - default:
-      heapster_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['heapster-amd64'] }}
-      heapster_influxdb_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['heapster-influxdb-amd64'] }}
-      heapster_grafana_version: {{ pillar['packages']['images']['gcr.io']['google_containers']['heapster-grafana-amd64'] }}
-EOF
-```
+
 [include对比扩展和 required or watch](http://ju.outofmemory.cn/entry/99067)
 extend 语句的工作方式有别于 require 或者 watch ，它只是附加而不是替换必要的组件。
 
-#### kubernetes安装插件和应用
-
+#### kubernetes安装EFK插件和应用
+根据架构图,启动管理器
+```
+tee /srv/salt/usr/local/kubernetes/manifests/init.sls <<-EOF
+include:
+  - usr.local.kubernetes.manifests.kubernetes-dashboard
+  - usr.local.kubernetes.manifests.kubernetes-heapster
+  - usr.local.kubernetes.manifests.nginx-ingress-controller
+  - usr.local.kubernetes.manifests.calico
+  - usr.local.kubernetes.manifests.kube-efk
+EOF
+```
+配置EFK需要的ConfigMap文件
+```
+tee /srv/salt/usr/local/kubernetes/manifests/kube-efk/init.sls <<-EOF
+include:
+  - usr.local.kubernetes.manifests.kube-efk.es-controller
+  - usr.local.kubernetes.manifests.kube-efk.fluentd-es-ds
+  - usr.local.kubernetes.manifests.kube-efk.kibana-controller
+/usr/local/kubernetes/manifests/kube-efk/es-clusterrole.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/es-clusterrole.yaml
+/usr/local/kubernetes/manifests/kube-efk/es-clusterrolebinding.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/es-clusterrolebinding.yaml
+/usr/local/kubernetes/manifests/kube-efk/es-service.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/es-service.yaml
+/usr/local/kubernetes/manifests/kube-efk/es-serviceaccount.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/es-serviceaccount.yaml
+/usr/local/kubernetes/manifests/kube-efk/fluentd-es-clusterrole.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/fluentd-es-clusterrole.yaml
+/usr/local/kubernetes/manifests/kube-efk/fluentd-es-clusterrolebinding.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/fluentd-es-clusterrolebinding.yaml
+/usr/local/kubernetes/manifests/kube-efk/fluentd-es-serviceaccount.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/fluentd-es-serviceaccount.yaml
+/usr/local/kubernetes/manifests/kube-efk/kibana-service.yaml:
+  file.managed:
+    - source: salt://usr/local/kubernetes/manifests/kube-efk/kibana-service.yaml
+EOF
+```
 ```
 salt '*' state.sls usr.local.kubernetes.deploy-k8s
 salt -E 'centos7-bcc[2,3].*' cmd.run 'bash /usr/local/kubernetes/deploy-k8s.sh replica'
 salt -E 'centos7-bcc[2,3].*' cmd.run 'kubeadm join --token 849fab.ec34e21817d1c573 172.16.0.2:6443'
-# 将插件的ConfigMap文件
+# 使用ConfigMap文件创建集群容器,此处注意sls的include每次只能包含一个文件
+salt '*' cmd.run 'mkdir -p /usr/local/kubernetes/manifests/kube-efk/'
 salt '*' state.sls usr.local.kubernetes.manifests
 kubectl apply -f /usr/local/kubernetes/manifests/
+kubectl apply -f /usr/local/kubernetes/manifests/efk/
+```
+[错误处理](http://www.cnblogs.com/zlslch/p/6616081.html)
+```
+kubectl logs <fluentd-pod-name> --namespace=kube-system
+#Errno::EACCES: Permission denied @ rb_sysopen - /var/log/es-containers.log.pos
+#删除/etc/sysconfig/docker中的--log-driver=journald,然后重启docker
+salt '*' cmd.run 'sed -i "s/--log-driver=journald//g" /etc/sysconfig/docker'
+salt '*' cmd.run 'systemctl restart docker'
+salt '*' cmd.run 'setenforce 0'
+
+#Error: 'dial tcp 172.17.0.3:5601: getsockopt: connection refused'
+#检查各组件和服务运行状态是否有文件丢失
+salt '*' state.sls usr.local.kubernetes.manifests.efk.es-controller
+salt '*' state.sls usr.local.kubernetes.manifests.efk.fluentd-es-controller
+salt '*' state.sls usr.local.kubernetes.manifests.efk.kibana-controller
+
+kubectl logs <kibana-pod-name> --namespace=kube-system
+#"tags":["status","plugin:elasticsearch@1.0.0","error"],"pid":5,"state":"red","message":"Status changed from yellow to red - Request Timeout after 3000ms","prevState":"yellow","prevMsg":"Waiting for Elasticsearch"
+
+kubectl logs <kelasticsearch-pod-name> --namespace=kube-system
+#exception caught on transport layer [[id: 0x9e52b0d1]], closing connection
+#java.net.NoRouteToHostException: No route to host
+```
+检查执行结果
+```
+# kubectl apply -f /usr/local/kubernetes/manifests/kube-efk/
+clusterrole "elasticsearch-logging" created
+clusterrolebinding "elasticsearch-logging" created
+service "elasticsearch-logging" created
+serviceaccount "elasticsearch-logging" created
+clusterrole "fluentd-es" created
+clusterrolebinding "fluentd-es" created
+serviceaccount "fluentd-es" created
+deployment "kibana-logging" created
+service "kibana-logging" created
+# kubectl get all -n kube-system
+NAME                                             READY     STATUS    RESTARTS   AGE
+po/calico-node-16n1v                             2/2       Running   4          21h
+po/calico-node-1nms8                             2/2       Running   4          21h
+po/calico-node-sdwbv                             2/2       Running   2          21h
+po/calico-policy-controller-1921870702-jlvht     1/1       Running   1          21h
+po/elasticsearch-logging-v1-c3t67                1/1       Running   0          57s
+po/elasticsearch-logging-v1-frz8j                1/1       Running   0          57s
+po/fluentd-es-v1.22-snw18                        1/1       Running   0          57s
+po/kibana-logging-1738074297-11j54               1/1       Running   0          58s
+po/kube-apiserver-instance-83trene1-3            1/1       Running   4          1d
+po/kube-controller-manager-instance-83trene1-3   1/1       Running   4          1d
+po/kube-dns-668322164-bj622                      3/3       Running   6          1d
+po/kube-proxy-8w9hb                              1/1       Running   3          1d
+po/kube-proxy-dfxgk                              1/1       Running   1          1d
+po/kube-proxy-vpcwj                              1/1       Running   3          1d
+po/kube-scheduler-instance-83trene1-3            1/1       Running   4          1d
+po/kubernetes-dashboard-7797369-0g72c            1/1       Running   2          11h
+
+NAME                          DESIRED   CURRENT   READY     AGE
+rc/elasticsearch-logging-v1   2         2         2         58s
+
+NAME                        CLUSTER-IP       EXTERNAL-IP   PORT(S)         AGE
+svc/elasticsearch-logging   10.106.248.231   <none>        9200/TCP        58s
+svc/kibana-logging          10.99.130.215    <none>        5601/TCP        57s
+svc/kube-dns                10.96.0.10       <none>        53/UDP,53/TCP   1d
+svc/kubernetes-dashboard    10.97.239.197    <nodes>       80:30000/TCP    11h
+
+NAME                              DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
+deploy/calico-policy-controller   1         1         1            1           21h
+deploy/kibana-logging             1         1         1            1           58s
+deploy/kube-dns                   1         1         1            1           1d
+deploy/kubernetes-dashboard       1         1         1            1           11h
+
+NAME                                     DESIRED   CURRENT   READY     AGE
+rs/calico-policy-controller-1921870702   1         1         1         21h
+rs/kibana-logging-1738074297             1         1         1         58s
+rs/kube-dns-668322164                    1         1         1         1d
+rs/kubernetes-dashboard-7797369          1         1         1         11h
+```
+可以看到我们的dashboard,EFK,monitor都创建完毕.在dashboard中我们还能通过web UI对所有pods,service,rs进行管理:
+
+![通过dashboard管理集群](../images/2-3_dashboard.png)
+
+因为我们的应用还未开发完成,需要对冷热数据的定义才能明确存储对象,而集群的
+
+这里也能感受到kubernetes的强大之处,开发中需要什么资源只需要写好配置文件创建即可,他会自动调配可用的worker提供运算和存储.统一管理所有资源,还提供能够无限扩容,滚动更新,事务处理,组件监控等企业级应用能力,这样就屏蔽了基础设施的运维工作,对我们后续开发,包括分布式爬虫,搜索引擎,大数据集群及机器学习都至关重要.
+```
 # 检查etcd状态
 etcdctl cluster-health
 # 查看全部pods,services,rc
 kubectl get all --all-namespaces -o wide
-# 
+# 查看容器状态和日志
+kubectl attach <pod-name> —namespace=kube-system
+kubectl attach kibana-logging-1738074297-0n1wt -c kibana-logging —namespace=kube-system
+kubectl logs <pod-name> —namespace=kube-system
+kubectl describe <po/pod-name|svc/service-name|rs/replicasets-name> —namespace=kube-system
+# 节点隔离
+kubectl patch node <node-name> -p '{＂spec＂:{＂unschedulable＂:true}}'
+# 动态扩容或缩容
+kubectl scale rc <replicasets-name> --replicas=<number>
+kubectl autoscale rc <replicasets-name> —min=<min-number> —max=<max-number>
 # 查看子网分配
-kubectl get ep kubernetes-dashboard --namespace=kube-system
+kubectl get ep --namespace=kube-system
+# 如果需要外网访问的服务,修改为NodePort模式
+kubectl edit svc/<service-name> --namespace=kube-system
+# 查看svc的NodePort
+kubectl get svc <service-name> -o json --namespace=kube-system
 #
-kubectl describe services --all-namespaces
+kubectl get events --namespace=kube-system
+# 在容器内执行命令
+ kubectl exec <pod-name> --namespace kube-system -- <commond [option]>
+# 映射端口到外网
+nohup kubectl proxy --address=<ip-address> --port=<open-port> --accept-hosts='^*$' &
+# dashboard访问地址
+http://<ip-address>:<open-port>
+# kibana访问地址
+http://<ip-address>:<open-port>/api/v1/proxy/namespaces/kube-system/services/kibana-logging
+
+# 标签操作
+kubectl label [nodes|pod|svc] <object-name> <label-key>=<label-value>
+#然后在Pod的配置文件中加入nodeSelector定义
+spec:
+  nodeSelector:
+    <label-key>:<label-value>
+# 滚动升级
+kubectl rolling-update <pod-name> -f <new-configmap>
+# 或者
+kubectl rolling-update <pod-name> --image=<image-name>:<image-version>
+# 升级回滚
+Kubectl rolling-update –rollback
 ```
+
+
 #### 编码规范
 以Java最佳编程实践为范本,以利于自动化代码检查和测试
 - java
@@ -314,13 +445,15 @@ kubectl describe services --all-namespaces
 ```
 切片约定:
 存档约定:
+#### 配置EFK采集集群日志
+
 #### 6-10
 项目管理->代码库->规范/安全检查->CI/CD->需求迭代采用[阿里云code]()进行管理,对于中小型项目还是很实用的,这里就无须重复造轮子了。
 ---
 #### [章节目录](#本章知识点)
 - [始、有一个改变世界的idea,就缺个程序员了](始、有一个改变世界的idea,就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
 - [一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)![image](http://progressed.io/bar/90?title=salt+kubernetes)
-- **[二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系](二、EFK+Jenkins可扩展的DevOps自动化运维部署及监控体系)**![image](http://progressed.io/bar/40?title=EFK+DevOps)
+- **[二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系](二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系)**![image](http://progressed.io/bar/40?title=EFK+DevOps)
 - [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集.md)![image](http://progressed.io/bar/65?title=python+crawler)
 - [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎.md)![image](http://progressed.io/bar/30?title=VCA+go+engine)
 - [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化.md)![image](http://progressed.io/bar/20?title=hadoop+saprk)
