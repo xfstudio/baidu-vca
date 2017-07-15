@@ -49,11 +49,11 @@ nginx:
 #分组配置：【/etc/salt/master】
 ```
 nodegroups:
-  web1group: 'L@wx,SN2013-08-21'
-  web2group: 'L@SN2013-08-22,SN2014'
+  k8s-master: 'centos7-bcc1-xf-baidu-cn-guangzhou'
+  k8s-worker: 'centos7-bcc2-xf-baidu-cn-guangzhou,centos7-bcc3-xf-baidu-cn-guangzhou'
 ```
 #其中L@表示后面的主机id格式为列表，即主机id以逗号分隔：G@表示以grain格式描述：S@表示以IP子网或地址格式描述
-salt -N web2group test.ping #探测web2group被控主机的连通性
+salt -N k8s-worker test.ping #探测web2group被控主机的连通性
 ```
 -C,--compound,根据条件运算符not、and、or去匹配不同规则的主机信息
 ```
@@ -293,7 +293,7 @@ EOF
 ```
 salt '*' state.sls usr.local.kubernetes.deploy-k8s
 salt -E 'centos7-bcc[2,3].*' cmd.run 'bash /usr/local/kubernetes/deploy-k8s.sh replica'
-salt -E 'centos7-bcc[2,3].*' cmd.run 'kubeadm join --token 849fab.ec34e21817d1c573 172.16.0.2:6443'
+salt -E 'centos7-bcc[2,3].*' cmd.run 'kubeadm join --token cde652.ba6f5498291abf9a 172.16.0.2:6443'
 # 使用ConfigMap文件创建集群容器,此处注意sls的include每次只能包含一个文件
 salt '*' cmd.run 'mkdir -p /usr/local/kubernetes/manifests/kube-efk/'
 salt '*' state.sls usr.local.kubernetes.manifests

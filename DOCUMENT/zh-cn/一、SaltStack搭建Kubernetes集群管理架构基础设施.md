@@ -140,6 +140,18 @@ salt '*' cmd.exec_code python 'import sys; print sys.version'
 确认全部命令执行完成,报错不可怕,能够根据错误检查出问题所在加以解决,可怕的是不报错却没达到预期输出。如存在minion丢失,使用“sudo systemctl status salt-minion -l”进行错误排查
 ##### 2.
 安装并配置docker==以下命令皆在master机上执行即可==
+- 系统配置
+```
+# 关闭防火墙
+salt '*' cmd.run 'systemctl disable firewalld && systemctl stop firewalld && systemctl status firewalld'
+# 设置SELINUX为permissive模式
+salt '*' cmd.run 'sed -i "s/SELINUX=enforcing/SELINUX=permissive/g" /etc/selinux/config'
+# 设置iptables参数
+salt '*' cmd.run 'tee /etc/sysctl.d/k8s.conf <<-"EOF"
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+EOF'
+```
 - 自动挂载数据盘（如有,推荐）
 ```
 salt '*' cmd.run 'echo "/dev/xvdb1 /data ext3 defaults 0 0">> /etc/fstab'
@@ -208,6 +220,7 @@ docker inspect <容器ID或NAME>查看Runtime
 yum install -y util-linux
 # 首先,计算出你要进入容器的PID：
 PID=$(docker inspect --format {{.State.Pid}} <container_name_or_ID>)
+PID=$(docker inspect --format {{.State.Pid}} 3d2e168a206f)
 # 然后进入容器：
 nsenter --target $PID --mount --uts --ipc --net --pid
 ```
@@ -288,7 +301,7 @@ salt "*" cmd.run 'yum install -y /tmp/rpm/*.rpm'
 
 ```
 ##### 6.
-salt的pillar提供统一的集群配置模板管理,是实现自动化运维的关键所在,所使用的jinra模板引擎,类似于PHP的MVC,易于理解和使用。要注意sls配置文件的yaml强制约定以两个空格作为缩进,“:”和键值之间必须有至少一个空格。使用salt集群化安装和配置kubernetes、etcd、flannel（参考来源:[I:shdowsocks自用梯子的搭建和优化](http://note.youdao.com/noteshare?id=c2087b3ba10809abf605d8068d94b25d&sub=CF294ADF75E14B5EA0382D2E0E8D2286)、[II:kubeadm(安装过程需科学上网)](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)、[III:kubeadm国内安装](https://my.oschina.net/xdatk/blog/895645?nocache=1498467713064)、[IV:手动搭建kubernetes集群](https://github.com/opsnull/follow-me-install-kubernetes-cluster)、[一键部署Kubernetes高可用集群](http://www.cnblogs.com/keithtt/p/6649995.html)、[V:kubeadm v1.6.6的一些注意事项](http://blog.csdn.net/tiger435/article/details/73996078)）
+salt的pillar提供统一的集群配置模板管理,是实现自动化运维的关键所在,所使用的jinra模板引擎,类似于PHP的MVC,易于理解和使用。要注意sls配置文件的yaml强制约定以两个空格作为缩进,“:”和键值之间必须有至少一个空格。使用salt集群化安装和配置kubernetes、etcd、flannel（参考来源:[I:shdowsocks自用梯子的搭建和优化](http://note.youdao.com/noteshare?id=c2087b3ba10809abf605d8068d94b25d&sub=CF294ADF75E14B5EA0382D2E0E8D2286)、[II:kubeadm(安装过程需科学上网)](https://kubernetes.io/docs/setup/independent/create-cluster-kubeadm/)、[III:kubeadm国内安装](https://my.oschina.net/xdatk/blog/895645?nocache=1498467713064)、[IV:手动搭建kubernetes集群](https://github.com/opsnull/follow-me-install-kubernetes-cluster)、[一键部署Kubernetes高可用集群](http://www.cnblogs.com/keithtt/p/6649995.html)、[V:kubeadm v1.6.6的一些注意事项](http://blog.csdn.net/tiger435/article/details/73996078)、[VI:kubeadm HA](https://github.com/cookeem/kubeadm-ha)）
 - 创建集群环境配置文件模板
 ```
 tee /srv/pillar/top.sls <<-EOF

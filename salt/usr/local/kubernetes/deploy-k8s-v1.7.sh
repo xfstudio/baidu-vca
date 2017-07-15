@@ -23,11 +23,14 @@ apiVersion: kubeadm.k8s.io/v1alpha1
 kind: MasterConfiguration
 networking:
   podSubnet: {{ cluster['service_cidr'] }}
+apiServerCertSANs:
+{% for server in cluster_servers %}  - {{ cluster_servers[server] }}{% if not loop.last %}
+{% endif %}{% endfor %}
 api:
   advertiseAddress: $KUBE_MASTER
 etcd:
   endpoints:
-{% for server in cluster_servers %}  - {{ pillar['etcd']['prefix'] }}://{{ cluster_servers[server] }}:{{ pillar['etcd']['endpoint_port'] }}{% if not loop.last %}
+{% for server in cluster_servers %}    - {{ pillar['etcd']['prefix'] }}://{{ cluster_servers[server] }}:{{ pillar['etcd']['endpoint_port'] }}{% if not loop.last %}
 {% endif %}{% endfor %}
 kubernetesVersion: $KUBE_VERSION
 EOF
@@ -63,7 +66,7 @@ kube::install_docker()
 
 kube::config_docker()
 {
-    setenforce 0 > /dev/null 2>&1 && sed -i -e 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+    setenforce 0 > /dev/null 2>&1 && sed -i -e 's/SELINUX=enforcing/SELINUX=permissive/g' /etc/selinux/config
 
     sysctl -w net.bridge.bridge-nf-call-iptables=1
     sysctl -w net.bridge.bridge-nf-call-ip6tables=1
@@ -144,7 +147,7 @@ kube::get_env()
 {
   HA_STATE=$1
   [ $HA_STATE == "MASTER" ] && HA_PRIORITY=200 || HA_PRIORITY=`expr 200 - ${RANDOM} / 1000 + 1`
-  KUBE_VIP=$(echo ${KUBE_MASTER} |awk -F= '{print $1}')
+  KUBE_VIP=$(echo ${KUBE_MASTER} |awk -F= '{print $2}')
   VIP_PREFIX=$(echo ${KUBE_VIP} | cut -d . -f 1,2,3)
   VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'dynamic' '{print $2}' | head -1)
   [ -z ${VIP_INTERFACE} ] && VIP_INTERFACE=$(ip addr show | grep ${VIP_PREFIX} | awk -F 'global' '{print $2}' | head -1)
@@ -250,7 +253,7 @@ kube::master_up()
 
     mkdir -p ~/.kube
     alias cp='cp'
-    cp -f /etc/kubernetes/admin.conf ~/.kube/config
+    cp /etc/kubernetes/admin.conf ~/.kube/config
     alias cp='cp -i'
     kubectl taint nodes --all dedicated-
 
