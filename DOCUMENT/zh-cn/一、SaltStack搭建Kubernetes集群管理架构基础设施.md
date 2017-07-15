@@ -710,7 +710,7 @@ salt '*' cmd.run 'systemctl enable keepalived && systemctl restart keepalived'
 
 ---
 #### [章节目录](#本章知识点)
-- [始、有一个改变世界的idea,就缺个程序员了](始、有一个改变世界的idea,就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
+- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
 - **[一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)**![image](http://progressed.io/bar/90?title=salt+kubernetes)
 - [二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系](二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系.md)![image](http://progressed.io/bar/60?title=EFK+DevOps)
 - [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集.md)![image](http://progressed.io/bar/65?title=python+crawler)

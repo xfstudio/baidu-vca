@@ -1,15 +1,15 @@
 ## 从零开始构建语义化视频搜索引擎(二)、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系
 #### 本章知识点
-1. salt分组和OS自动化管理多种类型服务器(salt分组管理)
-2. [全局统一规范化编码及日志格式约定](编码规范)
-3. Kubernetes启动pod的yaml文件编写
-4. 集成通用日志采集和监控平台EFK用于开发调试
-5. 将EFK与Kubernetes集成实现服务器运行状态监控
-6. [Gitlab搭建本地代码库并触发自动集成CI](6-10)
-7. [Prometheus实现多种编程语言自动部署CD及其替代方案](6-10)
-8. [Prometheus插件SonarQube执行代码规范和安全性检查](6-10)
-9. [自动化测试框架解决方案](6-10)
-10. [实施敏捷开发必备的产品迭代工具：项目、bug、需求、优化、协作……集成管理平台](6-10)
+1. [salt分组和OS自动化管理多种类型服务器](#salt分组管理)
+2. [全局统一规范化编码及日志格式约定](#编码规范)
+3. [Kubernetes启动pod的yaml文件编写](#本章知识点)
+4. [集成通用日志采集和监控平台EFK用于开发调试](#本章知识点)
+5. [将Prometheus与Kubernetes集成实现服务器运行状态监控](#本章知识点)
+6. [Gitlab搭建本地代码库并触发自动集成CI](#6-10)
+7. [实现多种编程语言自动部署CD及其替代方案](#6-10)
+8. [Jenkins插件SonarQube执行代码规范和安全性检查](#6-10)
+9. [自动化测试框架解决方案](#6-10)
+10. [实施敏捷开发必备的产品迭代工具：项目、bug、需求、优化、协作……集成管理平台](#6-10)
 ---
 #### 开发支持体系之日志采集和监控EFK平台架构图
 ![通用日志采集和监控平台EFK架构图](../images/2-1-EFK.png)
@@ -378,7 +378,7 @@ rs/kubernetes-dashboard-7797369          1         1         1         11h
 
 ![通过dashboard管理集群](../images/2-3-dashboard.png)
 
-因为我们的应用还未开发完成,需要对冷热数据的定义才能明确存储对象,而集群的
+因为我们的应用还未开发完成,需要对冷热数据的定义才能明确存储对象,而集群的埋点(TODO:Prometheus)
 
 这里也能感受到kubernetes的强大之处,开发中需要什么资源只需要写好配置文件创建即可,他会自动调配可用的worker提供运算和存储.统一管理所有资源,还提供能够无限扩容,滚动更新,事务处理,组件监控等企业级应用能力,这样就屏蔽了基础设施的运维工作,对我们后续开发,包括分布式爬虫,搜索引擎,大数据集群及机器学习都至关重要.
 ```
@@ -451,9 +451,9 @@ Kubectl rolling-update –rollback
 项目管理->代码库->规范/安全检查->CI/CD->需求迭代采用[阿里云code]()进行管理,对于中小型项目还是很实用的,这里就无须重复造轮子了。
 ---
 #### [章节目录](#本章知识点)
-- [始、有一个改变世界的idea,就缺个程序员了](始、有一个改变世界的idea,就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
+- [始、有一个改变世界的idea，就缺个程序员了](始、有一个改变世界的idea，就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
 - [一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)![image](http://progressed.io/bar/90?title=salt+kubernetes)
-- **[二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系](二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系)**![image](http://progressed.io/bar/60?title=EFK+DevOps)
+- **[二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系](二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系.md)**![image](http://progressed.io/bar/60?title=EFK+DevOps)
 - [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集.md)![image](http://progressed.io/bar/65?title=python+crawler)
 - [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎.md)![image](http://progressed.io/bar/30?title=VCA+go+engine)
 - [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化.md)![image](http://progressed.io/bar/20?title=hadoop+saprk)
