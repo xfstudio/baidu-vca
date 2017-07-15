@@ -376,7 +376,7 @@ rs/kubernetes-dashboard-7797369          1         1         1         11h
 ```
 可以看到我们的dashboard,EFK,monitor都创建完毕.在dashboard中我们还能通过web UI对所有pods,service,rs进行管理:
 
-![通过dashboard管理集群](../images/2-3_dashboard.png)
+![通过dashboard管理集群](../images/2-3-dashboard.png)
 
 因为我们的应用还未开发完成,需要对冷热数据的定义才能明确存储对象,而集群的
 
@@ -453,7 +453,7 @@ Kubectl rolling-update –rollback
 #### [章节目录](#本章知识点)
 - [始、有一个改变世界的idea,就缺个程序员了](始、有一个改变世界的idea,就缺个程序员了.md)![image](http://progressed.io/bar/95?title=begin+architecture)
 - [一、SaltStack搭建Kubernetes集群管理架构基础设施](一、SaltStack搭建Kubernetes集群管理架构基础设施.md)![image](http://progressed.io/bar/90?title=salt+kubernetes)
-- **[二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系](二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系)**![image](http://progressed.io/bar/40?title=EFK+DevOps)
+- **[二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系](二、EFK+Prometheus可扩展的DevOps自动化运维部署及监控体系)**![image](http://progressed.io/bar/60?title=EFK+DevOps)
 - [三、使用Python的Scrapy开发分布式爬虫进行数据采集](三、使用Python的Scrapy开发分布式爬虫进行数据采集.md)![image](http://progressed.io/bar/65?title=python+crawler)
 - [四、VCA+go打造高性能语义化视频搜索引擎](四、VCA+go打造高性能语义化视频搜索引擎.md)![image](http://progressed.io/bar/30?title=VCA+go+engine)
 - [五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化](五、Hadoop+Spark-Streaming+GraphX实现大数据的流式计算和可视化.md)![image](http://progressed.io/bar/20?title=hadoop+saprk)
