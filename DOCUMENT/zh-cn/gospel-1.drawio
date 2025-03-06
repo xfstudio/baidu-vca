@@ -1,9 +1,78 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" version="26.0.16">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36" version="26.1.0">
   <diagram name="第 1 页" id="udERlPaKVl63Z_bmYuDq">
-    <mxGraphModel>
+    <mxGraphModel dx="1242" dy="785" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-1" value="TiDB集群" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="35" y="82" width="124" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-2" value="分库分表" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="263" y="30" width="124" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-3" value="实时数仓" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="263" y="134" width="124" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-4" value="Redis集群" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="32" y="290" width="129" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-5" value="热点数据" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="263" y="238" width="124" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-6" value="分布式锁" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="263" y="342" width="124" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-7" value="Elasticsearch" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="20" y="498" width="153" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-8" value="搜索推荐" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="263" y="446" width="124" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-9" value="日志分析" style="whiteSpace=wrap;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="263" y="550" width="124" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-10" value="OLTP" style="curved=1;startArrow=none;endArrow=block;exitX=1;exitY=0.01;entryX=0;entryY=0.5;rounded=0;" edge="1" parent="1" source="CoQYcFG44MTyUoJ6mm3A-1" target="CoQYcFG44MTyUoJ6mm3A-2">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="218" y="57" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-11" value="" style="curved=1;startArrow=none;endArrow=block;exitX=1;exitY=0.99;entryX=0;entryY=0.5;rounded=0;" edge="1" parent="1" source="CoQYcFG44MTyUoJ6mm3A-1" target="CoQYcFG44MTyUoJ6mm3A-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="218" y="161" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-12" value="" style="curved=1;startArrow=none;endArrow=block;exitX=0.99;exitY=0;entryX=0;entryY=0.5;rounded=0;" edge="1" parent="1" source="CoQYcFG44MTyUoJ6mm3A-4" target="CoQYcFG44MTyUoJ6mm3A-5">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="218" y="265" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-13" value="" style="curved=1;startArrow=none;endArrow=block;exitX=0.99;exitY=1;entryX=0;entryY=0.5;rounded=0;" edge="1" parent="1" source="CoQYcFG44MTyUoJ6mm3A-4" target="CoQYcFG44MTyUoJ6mm3A-6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="218" y="369" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-14" value="" style="curved=1;startArrow=none;endArrow=block;exitX=0.91;exitY=0;entryX=0;entryY=0.5;rounded=0;" edge="1" parent="1" source="CoQYcFG44MTyUoJ6mm3A-7" target="CoQYcFG44MTyUoJ6mm3A-8">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="218" y="473" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CoQYcFG44MTyUoJ6mm3A-15" value="" style="curved=1;startArrow=none;endArrow=block;exitX=0.91;exitY=1;entryX=0;entryY=0.5;rounded=0;" edge="1" parent="1" source="CoQYcFG44MTyUoJ6mm3A-7" target="CoQYcFG44MTyUoJ6mm3A-9">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="218" y="577" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
